@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Recall UI
 
-## Getting Started
+The browser frontend for [Recall](https://github.com/yashwant-yarra/Recall): upload documents, record voice notes, ask questions with cited answers, and run an agent that asks before it acts.
 
-First, run the development server:
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Firebase Auth
+
+## Screens
+
+- **Library:** upload PDF, DOCX, TXT or audio, or record a voice note in the browser. Files go straight to Cloud Storage through a signed URL; the list refreshes until processing finishes, then shows each voice note's summary, action items and topics.
+- **Ask:** streamed answers from your own files, with numbered citations (page, or voice note).
+- **Agent:** give a goal and watch each tool step stream in; creating a task or saving a draft waits for your Approve / Reject.
+- **Account:** your plan and daily limits; Upgrade to Pro opens Razorpay's hosted checkout and the page updates when the payment webhook lands.
+
+## How it talks to the API
+
+- Every request carries `Authorization: Bearer <Firebase ID token>`; the API verifies it.
+- Streams (`/ask`, the agent) are POST requests read with `fetch()` and a stream reader, because `EventSource` can't send POST bodies or an `Authorization` header.
+- Uploads are two steps: `POST /api/v1/files` returns a signed URL and the exact headers it was signed with; the browser `PUT`s the bytes to Cloud Storage with those headers.
+- The app is a client app (`'use client'`) that calls the API directly from the browser, so long streams never pass through a serverless function's time limit.
+
+## Run locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local   # then fill in the values
+npm install
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+All variables are `NEXT_PUBLIC_` and end up in the browser bundle, so none may be secret (the Firebase web config is public by design). The API must allow the UI's origin in `CORS_ORIGINS`, and the bucket's CORS policy must allow `PUT` from it.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To point at a local API instead: `NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Checks
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npx tsc --noEmit && npm run lint && npm run build
+```

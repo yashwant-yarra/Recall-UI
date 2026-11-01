@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
+/* Palette: quiet neutrals with one accent. Dark mode follows the OS setting. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --fg: #1c1c1a;
+  --muted: #6b6b66;
+  --border: #e4e4df;
+  --accent: #2f5d50;
+  --accent-fg: #ffffff;
+  --accent-soft: #e5efeb;
+  --danger: #b42318;
+  --warn: #9a6700;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #121211;
+    --surface: #1b1b19;
+    --fg: #ecece8;
+    --muted: #9b9b95;
+    --border: #2c2c29;
+    --accent: #7fb8a4;
+    --accent-fg: #0f1a16;
+    --accent-soft: #1d2b26;
+    --danger: #f2877c;
+    --warn: #e0b04f;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+@layer components {
+  .field {
+    @apply w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium transition hover:bg-bg disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-fg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .card {
+    @apply rounded-xl border border-border bg-surface;
+  }
+  .pill {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  }
 }
