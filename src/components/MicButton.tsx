@@ -100,7 +100,7 @@ export function MicButton({ onText, disabled }: { onText: (text: string) => void
       </button>
       {error && (
         <span role="alert"
-              className="absolute bottom-full right-0 z-10 mb-1 flex w-64 items-start gap-2 rounded-lg border border-border bg-surface p-2 text-xs text-danger shadow">
+              className="absolute bottom-full right-0 z-10 mb-1 flex w-64 items-start gap-2 rounded-[3px] border border-border bg-surface p-2 text-xs text-danger shadow">
           <span className="flex-1">{error}</span>
           <button type="button" onClick={() => setError(null)} aria-label="Close message" title="Close"
                   className="-m-1 rounded p-1 leading-none text-muted hover:text-fg">

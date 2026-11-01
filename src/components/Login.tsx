@@ -36,15 +36,17 @@ export function Login() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
+    <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
-        <h1 className="text-3xl font-semibold tracking-tight">Recall</h1>
-        <p className="mt-2 text-sm text-muted">
-          Your documents and voice notes, searchable, with an agent that asks before it acts.
+        <h1 className="chapter !text-7xl">Recall</h1>
+        <p className="mt-4 text-[1.05rem] leading-7">
+          Your documents and voice notes, <span className="hl hl-solid hl-n1 px-0.5">searchable</span>, with an agent
+          that <span className="hl hl-solid hl-n2 px-0.5">asks before it acts</span>.
         </p>
-        <form onSubmit={submit} className="mt-8 space-y-3">
+        <form onSubmit={submit} className="sheet mt-8 space-y-4 p-5">
+
           <label className="block">
-            <span className="text-sm font-medium">Email</span>
+            <span className="label">Email</span>
             <input
               type="email"
               required
@@ -55,7 +57,7 @@ export function Login() {
             />
           </label>
           <label className="block">
-            <span className="text-sm font-medium">Password</span>
+            <span className="label">Password</span>
             <input
               type="password"
               required
@@ -66,7 +68,7 @@ export function Login() {
               className="field mt-1"
             />
           </label>
-          {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+          {error && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
           <button type="submit" disabled={busy} className="btn-primary w-full">
             {busy ? <Spinner label="Signing in" /> : mode === "in" ? "Sign in" : "Create account"}
           </button>
@@ -77,7 +79,7 @@ export function Login() {
             setMode(mode === "in" ? "up" : "in");
             setError(null);
           }}
-          className="mt-4 text-sm text-muted underline-offset-4 hover:underline"
+          className="mt-4 text-sm font-semibold text-accent underline-offset-4 hover:underline"
         >
           {mode === "in" ? "New here? Create an account" : "Have an account? Sign in"}
         </button>

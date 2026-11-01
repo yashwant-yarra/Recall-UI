@@ -1,31 +1,51 @@
 @import "tailwindcss";
 
-/* Palette: quiet neutrals with one accent. Dark mode follows the OS setting. */
+/* Highlighted textbook: a white page on a cool desk. Printed answers in ink, the student's words in
+   blue ballpoint, marking in red pen, citations as fluorescent highlighter. Dark mode follows the OS. */
 :root {
-  --bg: #f7f7f5;
-  --surface: #ffffff;
-  --fg: #1c1c1a;
-  --muted: #6b6b66;
-  --border: #e4e4df;
-  --accent: #2f5d50;
+  --bg: #e9ecf0; /* the desk */
+  --surface: #ffffff; /* the page */
+  --fg: #15171c; /* printed ink */
+  --muted: #5a606c;
+  --border: #d5dae2; /* ruled lines */
+  --accent: #1d3fbf; /* blue ballpoint: the student's own words, selection, focus */
   --accent-fg: #ffffff;
-  --accent-soft: #e5efeb;
-  --danger: #b42318;
-  --warn: #9a6700;
+  --accent-soft: #e4eaff;
+  --danger: #cf2430; /* red pen */
+  --warn: #a65400;
+  --ok: #157a3f;
+  --ink-btn: #15171c;
+  --ink-btn-fg: #ffffff;
+  --on-hl: #15171c; /* text sitting on a highlighter stroke */
+  --hl-1: #ffea4f; /* yellow */
+  --hl-2: #8ef0a6; /* green */
+  --hl-3: #ffa6d3; /* pink */
+  --hl-4: #ffc277; /* orange */
+  --hl-5: #a3dcff; /* blue */
+  --shadow: 0 1px 2px rgb(21 23 28 / 0.06), 0 8px 24px -12px rgb(21 23 28 / 0.18);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #121211;
-    --surface: #1b1b19;
-    --fg: #ecece8;
-    --muted: #9b9b95;
-    --border: #2c2c29;
-    --accent: #7fb8a4;
-    --accent-fg: #0f1a16;
-    --accent-soft: #1d2b26;
-    --danger: #f2877c;
-    --warn: #e0b04f;
+    --bg: #0b0c0f;
+    --surface: #15171b;
+    --fg: #eceef2;
+    --muted: #9ba2ae;
+    --border: #2a2e36;
+    --accent: #93b1ff;
+    --accent-fg: #0b0c0f;
+    --accent-soft: #1b2440;
+    --danger: #ff7272;
+    --warn: #f0b45a;
+    --ok: #6fe39a;
+    --ink-btn: #eceef2;
+    --ink-btn-fg: #0b0c0f;
+    --hl-1: #f2dc3c;
+    --hl-2: #74e092;
+    --hl-3: #f58fc2;
+    --hl-4: #f5ad5c;
+    --hl-5: #87cdf5;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 28px -14px rgb(0 0 0 / 0.7);
   }
 }
 
@@ -40,29 +60,121 @@
   --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
   --color-warn: var(--warn);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ok: var(--ok);
+  --color-ink: var(--ink-btn);
+  --color-ink-fg: var(--ink-btn-fg);
+  --color-on-hl: var(--on-hl);
+  --font-sans: var(--font-archivo), "Nirmala UI", "Noto Sans", system-ui, sans-serif;
 }
 
 body {
   background: var(--bg);
   color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The parts the browser draws carry the page too. */
+::selection {
+  background: var(--hl-1);
+  color: var(--on-hl);
+}
+html {
+  caret-color: var(--accent);
+  accent-color: var(--accent);
+  scrollbar-color: var(--border) transparent;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 @layer components {
-  .field {
-    @apply w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/25;
+  /* Chapter-style headings: Archivo at its condensed width. */
+  .chapter {
+    font-stretch: 72%;
+    @apply text-4xl leading-none font-extrabold tracking-[-0.01em] uppercase sm:text-5xl;
   }
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium transition hover:bg-bg disabled:cursor-not-allowed disabled:opacity-50;
+  .label {
+    font-stretch: 85%;
+    @apply text-xs font-bold tracking-[0.06em] text-muted uppercase;
   }
-  .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-fg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
+  .sheet {
+    @apply rounded-[3px] border border-border bg-surface;
+    box-shadow: var(--shadow);
   }
   .card {
-    @apply rounded-xl border border-border bg-surface;
+    @apply rounded-[3px] border border-border bg-surface;
+  }
+  .field {
+    @apply w-full rounded-[3px] border border-border bg-surface px-3 py-2 text-sm text-fg outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-[3px] border border-fg/25 bg-surface px-3 py-2 text-sm font-semibold transition hover:border-fg disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-[3px] border border-ink bg-ink px-3.5 py-2 text-sm font-semibold text-ink-fg transition hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  /* Current section: a blue-ballpoint underline. Highlighter colours are reserved for sources. */
+  .current {
+    color: var(--fg);
+    text-decoration: underline 2px var(--accent);
+    text-underline-offset: 6px;
   }
   .pill {
-    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center rounded-[3px] px-1.5 py-0.5 text-xs font-semibold;
+  }
+
+  /* A highlighter stroke. Pick the colour with .hl-n1..5. A thin underline marks it at rest;
+     data-on="true" swipes the full stroke in from the left. */
+  .hl {
+    --hl: var(--hl-1);
+    background-image: linear-gradient(var(--hl), var(--hl)), linear-gradient(var(--hl), var(--hl));
+    background-repeat: no-repeat;
+    background-position: 0 55%, 0 100%;
+    background-size: 0% 82%, 100% 0.3em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    transition: background-size 420ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease-out;
+  }
+  .hl[data-on="true"],
+  .hl-solid {
+    background-size: 100% 82%, 100% 0.3em;
+    color: var(--on-hl);
+  }
+  /* Cited sentences in an answer: a faint underline in the source's colour at rest, so the page reads
+     as already marked; the full stroke swipes in when their source is lit. */
+  .hl-quiet {
+    --hl: var(--hl-1);
+    background-image: linear-gradient(var(--hl), var(--hl)),
+      linear-gradient(color-mix(in srgb, var(--hl) 55%, transparent), color-mix(in srgb, var(--hl) 55%, transparent));
+    background-repeat: no-repeat;
+    background-position: 0 55%, 0 100%;
+    background-size: 0% 82%, 100% 2px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    transition: background-size 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hl-quiet[data-on="true"] {
+    background-size: 100% 82%, 100% 2px;
+    color: var(--on-hl);
+  }
+  .hl-n1 { --hl: var(--hl-1); }
+  .hl-n2 { --hl: var(--hl-2); }
+  .hl-n3 { --hl: var(--hl-3); }
+  .hl-n4 { --hl: var(--hl-4); }
+  .hl-n5 { --hl: var(--hl-5); }
+
+  /* Red-pen strike: nothing disappears, it cancels. */
+  .struck {
+    text-decoration: line-through;
+    text-decoration-color: var(--danger);
+    text-decoration-thickness: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hl,
+  .hl-quiet {
+    transition: none;
   }
 }

@@ -45,13 +45,13 @@ export function Preview({ fileId, page, onClose }: { fileId: string; page?: numb
       ref={dialog}
       onClose={onClose}
       onClick={(e) => e.target === dialog.current && dialog.current?.close()} // click on the backdrop
-      className="m-auto h-[85vh] w-[min(56rem,94vw)] rounded-xl border border-border bg-surface p-0 text-fg backdrop:bg-black/50"
+      className="m-auto h-[85vh] w-[min(56rem,94vw)] rounded-[3px] border border-border bg-surface p-0 text-fg shadow-2xl backdrop:bg-[#0b0c0f]/60"
     >
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <p className="truncate text-sm font-medium">
+          <p className="truncate text-sm font-bold">
             {file?.name ?? (file?.kind === "audio" ? "Voice note" : "Document")}
-            {pdf && page ? <span className="text-muted"> · page {page}</span> : null}
+            {pdf && page ? <span className="hl hl-solid hl-n1 ml-2 px-1">page {page}</span> : null}
           </p>
           <div className="flex shrink-0 gap-2">
             {file && <a href={file.url} target="_blank" rel="noreferrer" className="btn">Open in new tab</a>}

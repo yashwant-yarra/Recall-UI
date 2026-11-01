@@ -39,7 +39,7 @@ function Args({ args }: { args: Record<string, unknown> }) {
 
 function AnswerCard({ text, live }: { text: string; live: boolean }) {
   const shown = useReveal(text, live);
-  return <li className="card whitespace-pre-wrap bg-accent-soft px-4 py-3 text-sm leading-relaxed">{shown}</li>;
+  return <li className="sheet max-w-[72ch] px-5 py-4 text-[0.97rem] leading-7 whitespace-pre-wrap sm:px-6">{shown}</li>;
 }
 
 // A live answer is text still streaming in; if a tool step follows, that text was a draft, so drop it.
@@ -143,11 +143,11 @@ export function Agent() {
   const decide = (approve: boolean) => runId && void run(`/api/v1/agent/runs/${runId}/approve`, { approve });
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1fr_16rem]">
-      <div className="space-y-4">
+    <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]">
+      <div className="min-w-0 space-y-4">
         <form onSubmit={start} className="flex gap-2">
           <input value={goal} onChange={(e) => setGoal(e.target.value)} maxLength={2000} aria-label="Goal"
-                 placeholder="e.g. Make a task for every action item in my latest voice note" className="field" />
+                 placeholder="e.g. Make a task for every action item in my latest voice note" className="field font-medium text-accent" />
           <button type="submit" disabled={busy || !goal.trim()} className="btn-primary shrink-0">
             {busy ? <><Spinner /> Working…</> : "Run"}
           </button>
@@ -158,11 +158,11 @@ export function Agent() {
           {items.map((it, i) => {
             if (it.type === "step")
               return (
-                <li key={i} className="card px-4 py-3 text-sm">
+                <li key={i} className="border-b border-border px-1 pb-3 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{TOOL_LABEL[it.tool] ?? it.tool}</span>
-                    {it.approved === true && <span className="pill bg-accent text-accent-fg">approved</span>}
-                    {it.approved === false && <span className="pill bg-bg text-muted">rejected</span>}
+                    <span className={`font-bold ${it.approved === false ? "struck text-muted" : ""}`}>{TOOL_LABEL[it.tool] ?? it.tool}</span>
+                    {it.approved === true && <span className="label !text-ok">approved</span>}
+                    {it.approved === false && <span className="label !text-danger">rejected</span>}
                   </div>
                   <Args args={it.args} />
                   <details className="mt-2 text-xs text-muted">
@@ -173,8 +173,8 @@ export function Agent() {
               );
             if (it.type === "approval")
               return (
-                <li key={i} className="card border-warn px-4 py-3 text-sm">
-                  <p className="font-medium">Approve: {TOOL_LABEL[it.tool] ?? it.tool}?</p>
+                <li key={i} className="sheet px-5 py-4 text-sm">
+                  <p className="text-base font-bold"><span className="hl hl-solid hl-n4 px-0.5">Approve: {TOOL_LABEL[it.tool] ?? it.tool}?</span></p>
                   <Args args={it.args} />
                   <div className="mt-3 flex gap-2">
                     <button className="btn-primary" disabled={busy} onClick={() => decide(true)}>Approve</button>
@@ -190,15 +190,15 @@ export function Agent() {
       </div>
 
       <aside>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">History</h3>
-        <ul className="mt-2 max-h-[32rem] space-y-1 overflow-y-auto">
+        <h3 className="label px-2">History</h3>
+        <ul className="mt-2 max-h-[32rem] space-y-0.5 overflow-y-auto">
           {runs.map((r) => (
             <li key={r.run_id}>
               <button onClick={() => void openRun(r.run_id)} disabled={busy}
-                      className={`w-full rounded-lg px-2 py-1.5 text-left text-xs transition hover:bg-surface ${
+                      className={`w-full rounded-[3px] px-2 py-1.5 text-left text-xs transition hover:bg-surface ${
                         r.run_id === runId ? "bg-surface" : ""}`}>
-                <span className="line-clamp-2">{r.goal}</span>
-                <span className={r.status === "awaiting_approval" ? "font-medium text-warn" : "text-muted"}>
+                <span className="line-clamp-2 text-sm font-semibold">{r.goal}</span>
+                <span className={r.status === "awaiting_approval" ? "font-bold text-warn" : r.status === "failed" ? "text-danger" : "text-muted"}>
                   {r.status.replace("_", " ")} · {new Date(r.created_at).toLocaleDateString()}
                 </span>
               </button>

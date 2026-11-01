@@ -105,7 +105,7 @@ export function Talk({ refreshKey }: { refreshKey: number }) {
   const mins = secondsLeft === null ? "" : `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
 
   return (
-    <section className="mx-auto max-w-2xl space-y-5">
+    <section className="max-w-2xl space-y-5">
       <div className="flex flex-wrap items-center gap-2">
         <select value={fileId} onChange={(e) => setFileId(e.target.value)} disabled={status === "connecting" || live}
                 aria-label="Document" className="field w-auto max-w-xs">
@@ -119,14 +119,14 @@ export function Talk({ refreshKey }: { refreshKey: number }) {
         </select>
       </div>
 
-      <div className="card flex flex-col items-center gap-3 p-8 text-center">
+      <div className="sheet flex flex-col items-center gap-4 px-6 py-10 text-center">
         <button
           onClick={() => (live || status === "connecting" ? cleanup.current?.() : void start())}
           aria-label={live ? "End conversation" : "Start talking"}
           title={live ? "End conversation" : "Start talking"}
-          className={`flex h-20 w-20 items-center justify-center rounded-full transition ${
-            live ? "bg-danger text-white" : "bg-accent text-accent-fg hover:opacity-90"
-          } ${live && speaking ? "ring-8 ring-accent/30" : live ? "animate-pulse" : ""}`}
+          className={`flex h-24 w-24 items-center justify-center rounded-full transition ${
+            live ? "bg-danger text-white" : "bg-ink text-ink-fg hover:opacity-85"
+          } ${live && speaking ? "ring-[10px] ring-[var(--hl-1)]" : live ? "animate-pulse" : ""}`}
         >
           {status === "connecting" ? (
             <Spinner className="h-7 w-7" label="Connecting" />
@@ -149,11 +149,11 @@ export function Talk({ refreshKey }: { refreshKey: number }) {
       </div>
 
       {sources.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1 text-xs">
-          <span className="text-muted">Looked at:</span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
+          <span className="label">Looked at:</span>
           {sources.map((s, i) => (
             <button key={i} type="button" onClick={() => setPreview({ fileId: s.file_id, page: s.page })}
-                    className="pill bg-bg text-muted hover:text-accent">
+                    title="Open the source" className={`hl hl-n${(i % 5) + 1} font-semibold hover:[background-size:100%_82%,100%_0.3em]`}>
               {s.name ?? "Document"}{s.kind === "audio" ? " · voice note" : s.page ? ` · p. ${s.page}` : ""}
             </button>
           ))}
@@ -161,11 +161,11 @@ export function Talk({ refreshKey }: { refreshKey: number }) {
       )}
 
       {turns.length > 0 && (
-        <ol className="space-y-3" aria-label="Conversation">
+        <ol className="sheet divide-y divide-border px-5 sm:px-8" aria-label="Conversation">
           {turns.map((t, i) => (
             <li key={i} className={t.role === "user"
-              ? "ml-auto max-w-[85%] rounded-xl bg-accent px-4 py-2 text-sm text-accent-fg"
-              : "card max-w-[95%] px-4 py-3 text-sm leading-relaxed"}>
+              ? "py-3 text-[0.97rem] font-semibold text-accent"
+              : "py-3 text-[0.97rem] leading-7"}>
               {t.text}
             </li>
           ))}

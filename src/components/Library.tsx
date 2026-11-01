@@ -7,13 +7,6 @@ import { Preview } from "./Preview";
 import { Recorder } from "./Recorder";
 import { Loading } from "./Spinner";
 
-const STATUS_STYLE: Record<FileItem["status"], string> = {
-  pending: "bg-bg text-muted",
-  processing: "bg-accent-soft text-accent",
-  ready: "bg-accent text-accent-fg",
-  failed: "bg-danger/10 text-danger",
-};
-
 const TYPE_LABEL: Record<string, string> = {
   "application/pdf": "PDF",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
@@ -22,6 +15,20 @@ const TYPE_LABEL: Record<string, string> = {
 
 function size(bytes: number) {
   return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/** Status as a mark in a fixed cell: filled = ready, hollow = still working, struck = failed. */
+function StatusMark({ status }: { status: FileItem["status"] }) {
+  const box = "mt-1 h-3.5 w-3.5 shrink-0 rounded-[2px] border-2";
+  if (status === "ready") return <span className={`${box} border-ok bg-ok`} aria-hidden />;
+  if (status === "failed")
+    return (
+      <svg viewBox="0 0 14 14" className="mt-1 h-3.5 w-3.5 shrink-0 text-danger" aria-hidden>
+        <rect x="1" y="1" width="12" height="12" rx="1.5" fill="none" stroke="currentColor" strokeWidth="2" />
+        <path d="M2 12 12 2" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    );
+  return <span className={`${box} ${status === "processing" ? "animate-pulse border-warn" : "border-dashed border-muted"}`} aria-hidden />;
 }
 
 export function Library({ onOpen }: { onOpen: (tab: "chat" | "quiz", fileId: string) => void }) {
@@ -92,10 +99,10 @@ export function Library({ onOpen }: { onOpen: (tab: "chat" | "quiz", fileId: str
   }
 
   return (
-    <section className="space-y-6">
-      <div className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+    <section className="max-w-4xl space-y-5">
+      <div className="flex flex-col gap-4 border-b-2 border-fg pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="font-semibold">Add to your library</h2>
+          <h2 className="text-lg font-bold">Add to your library</h2>
           <p className="mt-1 text-sm text-muted">Documents are split and indexed; voice notes are transcribed and summarized.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -108,59 +115,66 @@ export function Library({ onOpen }: { onOpen: (tab: "chat" | "quiz", fileId: str
       </div>
 
       {busy && <Loading text={`Uploading ${busy}…`} />}
-      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+      {error && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
 
       {files === null ? (
         <Loading />
       ) : files.length === 0 ? (
-        <p className="text-sm text-muted">Nothing here yet. Upload a document or record a voice note.</p>
+        <p className="py-6 text-sm text-muted">Nothing here yet. Upload a document or record a voice note.</p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="sheet divide-y divide-border">
           {files.map((f) => (
-            <li key={f.file_id} className="card p-4">
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="font-medium">{f.name ?? (f.kind === "audio" ? "Voice note" : (TYPE_LABEL[f.mime_type] ?? "Document"))}</span>
-                <span className="text-muted">
-                  · {f.kind === "audio" ? "voice note" : (TYPE_LABEL[f.mime_type] ?? "document")} · {size(f.size_bytes)} · {new Date(f.created_at).toLocaleDateString()}
-                </span>
-                <span className={`pill ml-auto ${STATUS_STYLE[f.status]}`}>{f.status}</span>
-              </div>
-              {f.summary ? (
-                <p className="mt-2 text-sm">{f.summary}</p>
-              ) : (
-                f.preview && <p className="mt-2 line-clamp-2 text-sm text-muted">{f.preview}</p>
-              )}
-              {f.action_items.length > 0 && (
-                <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm">
-                  {f.action_items.map((a) => <li key={a}>{a}</li>)}
-                </ul>
-              )}
-              {f.topics.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {f.topics.map((t) => <span key={t} className="pill bg-bg text-muted">{t}</span>)}
-                </div>
-              )}
-              {f.error && <p className="mt-2 text-sm text-danger">{f.error}</p>}
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {f.status === "ready" && (
-                  <>
-                    <button className="btn" onClick={() => onOpen("chat", f.file_id)}>Ask about this</button>
-                    {f.kind === "doc" && <button className="btn" onClick={() => onOpen("quiz", f.file_id)}>Quiz me</button>}
-                  </>
-                )}
-                {f.status !== "pending" && <button className="btn" onClick={() => setPreviewing(f.file_id)}>Preview</button>}
-                {confirming === f.file_id ? (
-                  <span className="ml-auto flex items-center gap-2 text-sm">
-                    <span className="text-danger">Delete this file, its notes and search data?</span>
-                    <button className="btn border-danger text-danger" onClick={() => void remove(f.file_id)}>Yes, delete</button>
-                    <button className="btn" onClick={() => setConfirming(null)}>Cancel</button>
+            <li key={f.file_id} className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-3 px-4 py-4 sm:px-6">
+              <StatusMark status={f.status} />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span className={`font-bold ${f.status === "failed" ? "struck" : ""}`}>
+                    {f.name ?? (f.kind === "audio" ? "Voice note" : (TYPE_LABEL[f.mime_type] ?? "Document"))}
                   </span>
+                  <span className="text-sm text-muted">
+                    {f.kind === "audio" ? "voice note" : (TYPE_LABEL[f.mime_type] ?? "document")} · {size(f.size_bytes)} · {new Date(f.created_at).toLocaleDateString()}
+                  </span>
+                  <span className={`label ml-auto ${f.status === "failed" ? "!text-danger" : f.status === "ready" ? "!text-ok" : ""}`}>
+                    {f.status}
+                  </span>
+                </div>
+                {f.summary ? (
+                  <p className="mt-2 max-w-[68ch] text-sm leading-6">{f.summary}</p>
                 ) : (
-                  <button className="btn ml-auto text-muted hover:text-danger" onClick={() => setConfirming(f.file_id)}
-                          aria-label={`Delete ${f.name ?? "file"}`}>
-                    Delete
-                  </button>
+                  f.preview && <p className="mt-2 line-clamp-2 max-w-[68ch] text-sm text-muted">{f.preview}</p>
                 )}
+                {f.action_items.length > 0 && (
+                  <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm marker:text-muted">
+                    {f.action_items.map((a) => <li key={a}>{a}</li>)}
+                  </ul>
+                )}
+                {f.topics.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold">
+                    {f.topics.map((t, i) => <span key={t} className={`hl hl-n${(i % 5) + 1}`}>{t}</span>)}
+                  </div>
+                )}
+                {f.error && <p className="mt-2 text-sm text-danger">{f.error}</p>}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {f.status === "ready" && (
+                    <>
+                      <button className="btn" onClick={() => onOpen("chat", f.file_id)}>Ask about this</button>
+                      {f.kind === "doc" && <button className="btn" onClick={() => onOpen("quiz", f.file_id)}>Quiz me</button>}
+                    </>
+                  )}
+                  {f.status !== "pending" && <button className="btn" onClick={() => setPreviewing(f.file_id)}>Preview</button>}
+                  {confirming === f.file_id ? (
+                    <span className="ml-auto flex flex-wrap items-center gap-2 text-sm">
+                      <span className="text-danger">Delete this file, its notes and search data?</span>
+                      <button className="btn border-danger text-danger hover:border-danger" onClick={() => void remove(f.file_id)}>Yes, delete</button>
+                      <button className="btn" onClick={() => setConfirming(null)}>Cancel</button>
+                    </span>
+                  ) : (
+                    <button className="ml-auto px-2 py-2 text-sm font-semibold text-muted transition hover:text-danger"
+                            onClick={() => setConfirming(f.file_id)} aria-label={`Delete ${f.name ?? "file"}`}>
+                      Delete
+                    </button>
+                  )}
+                </div>
               </div>
             </li>
           ))}

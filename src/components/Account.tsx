@@ -55,23 +55,27 @@ export function Account({ me, onPlanChange }: { me: Me | null; onPlanChange: () 
   const pro = me?.plan === "pro";
   return (
     <section className="max-w-xl space-y-6">
-      <div className="card p-5">
-        <p className="text-sm text-muted">Current plan</p>
-        <p className="mt-1 text-2xl font-semibold">{me ? (pro ? "Pro" : "Free") : <Spinner className="h-6 w-6" label="Loading plan" />}</p>
-        <table className="mt-4 w-full text-sm">
+      <div className="sheet px-5 py-6 sm:px-8">
+        <p className="label">Current plan</p>
+        <p className="chapter mt-2 !text-5xl">{me ? (pro ? "Pro" : "Free") : <Spinner className="h-6 w-6" label="Loading plan" />}</p>
+        <table className="mt-6 w-full text-sm">
           <thead>
             <tr className="text-left text-muted">
               <th className="pb-2 font-normal"></th>
-              <th className={`pb-2 font-medium ${!pro ? "text-fg" : ""}`}>Free</th>
-              <th className={`pb-2 font-medium ${pro ? "text-fg" : ""}`}>Pro</th>
+              {(["Free", "Pro"] as const).map((p) => (
+                <th key={p} className="w-20 pb-2 font-bold">
+                  {/* Your plan's column is the one highlighted. */}
+                  <span className={me && (p === "Pro") === pro ? "hl hl-solid hl-n1 px-1" : ""}>{p}</span>
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {LIMITS.map((l) => (
               <tr key={l.label} className="border-t border-border">
-                <td className="py-2 text-muted">{l.label}</td>
-                <td className="py-2">{l.free}</td>
-                <td className="py-2">{l.pro}</td>
+                <td className="py-2.5 text-muted">{l.label}</td>
+                <td className={`py-2.5 ${!pro ? "font-bold" : ""}`}>{l.free}</td>
+                <td className={`py-2.5 ${pro ? "font-bold" : ""}`}>{l.pro}</td>
               </tr>
             ))}
           </tbody>

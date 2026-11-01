@@ -92,24 +92,24 @@ export function QuizView({ initialFileId, refreshKey }: { initialFileId: string 
   const shown = grade ? grade.results : quiz?.questions ?? [];
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1fr_15rem]">
-      <div className="space-y-5">
-        <form onSubmit={make} className="card grid gap-3 p-5 sm:grid-cols-2">
-          <label className="block sm:col-span-2">
-            <span className="text-sm font-medium">Document</span>
-            <select value={chosen} onChange={(e) => setFileId(e.target.value)} className="field mt-1" disabled={!docs.length}>
+    <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_15rem]">
+      <div className="min-w-0 space-y-6">
+        <form onSubmit={make} className="grid gap-3 border-b-2 border-fg pb-6 sm:grid-cols-[2fr_1fr_1fr]">
+          <label className="block">
+            <span className="label">Document</span>
+            <select value={chosen} onChange={(e) => setFileId(e.target.value)} className="field mt-1 font-semibold" disabled={!docs.length}>
               {docs.length === 0 && <option value="">Upload a document first</option>}
               {docs.map((d) => <option key={d.file_id} value={d.file_id}>{docName(d)}</option>)}
             </select>
           </label>
           <label className="block">
-            <span className="text-sm font-medium">Questions</span>
+            <span className="label">Questions</span>
             <select value={count} onChange={(e) => setCount(Number(e.target.value))} className="field mt-1">
               {[3, 5, 10].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </label>
           <label className="block">
-            <span className="text-sm font-medium">Type</span>
+            <span className="label">Type</span>
             <select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} className="field mt-1">
               <option value="mixed">Mixed</option>
               <option value="mcq">Multiple choice</option>
@@ -117,70 +117,79 @@ export function QuizView({ initialFileId, refreshKey }: { initialFileId: string 
             </select>
           </label>
           <label className="block sm:col-span-2">
-            <span className="text-sm font-medium">Topic <span className="font-normal text-muted">(optional)</span></span>
+            <span className="label">Topic <span className="font-normal normal-case tracking-normal">(optional)</span></span>
             <input value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={200} className="field mt-1"
                    placeholder="e.g. photosynthesis, chapter 3, Newton's laws" />
           </label>
-          <div className="sm:col-span-2">
-            <button type="submit" className="btn-primary" disabled={!chosen || busy !== null}>
+          <div className="flex items-end">
+            <button type="submit" className="btn-primary w-full" disabled={!chosen || busy !== null}>
               {busy === "making" ? <><Spinner /> Writing questions…</> : "Make a quiz"}
             </button>
           </div>
         </form>
 
-        {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+        {error && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
 
         {quiz && (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="font-semibold">
+          <div className="sheet px-5 py-6 sm:px-8">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
+              <h2 className="text-lg font-bold">
                 {quiz.file_name ?? "Quiz"}{quiz.topic ? ` · ${quiz.topic}` : ""}
               </h2>
               {grade && (
-                <span className="pill bg-accent text-accent-fg text-sm">Score: {grade.score} / {grade.total}</span>
+                // The mark, the way a teacher writes it: red pen, top right.
+                <p className="chapter !text-4xl text-danger" aria-label={`Score: ${grade.score} out of ${grade.total}`}>
+                  {grade.score}<span className="mx-1 font-medium">/</span>{grade.total}
+                </p>
               )}
             </div>
-            <ol className="space-y-4">
+            <ol className="divide-y divide-border">
               {shown.map((q, i) => (
-                <li key={i} className={`card p-4 text-sm ${grade ? (q.correct ? "border-accent" : "border-danger") : ""}`}>
-                  <p className="font-medium">
-                    {i + 1}. {q.question}
-                    {q.page !== null && <span className="ml-2 font-normal text-muted">(p. {q.page})</span>}
-                  </p>
-                  {q.type === "mcq" ? (
-                    <div className="mt-3 space-y-1.5">
-                      {q.options.map((opt) => {
-                        const picked = answers[i] === opt;
-                        const right = grade && opt === q.answer;
-                        return (
-                          <label key={opt} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 ${
-                            right ? "border-accent bg-accent-soft" : picked && grade ? "border-danger" : "border-border"}`}>
-                            <input type="radio" name={`q${i}`} checked={picked} disabled={!!grade}
-                                   onChange={() => setAnswers((a) => a.map((x, j) => (j === i ? opt : x)))} className="mt-0.5" />
-                            <span>{opt}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <textarea value={answers[i] ?? ""} disabled={!!grade} rows={2} maxLength={1000}
-                              onChange={(e) => setAnswers((a) => a.map((x, j) => (j === i ? e.target.value : x)))}
-                              className="field mt-3" placeholder="Your answer" />
-                  )}
-                  {grade && (
-                    <div className="mt-3 space-y-1 border-t border-border pt-3">
-                      <p className={q.correct ? "font-medium text-accent" : "font-medium text-danger"}>
-                        {q.correct ? "Correct" : "Not quite"}: {q.feedback}
-                      </p>
-                      {q.type === "short" && <p><span className="text-muted">Answer:</span> {q.answer}</p>}
-                      <p className="text-muted">{q.explanation}</p>
-                    </div>
-                  )}
+                <li key={i} className="grid grid-cols-[2rem_minmax(0,1fr)] py-5 text-sm">
+                  <span className={`text-base font-extrabold ${grade ? (q.correct ? "text-ok" : "text-danger") : ""}`}>{i + 1}.</span>
+                  <div className="min-w-0">
+                    <p className="text-[0.97rem] leading-6 font-semibold">
+                      {q.question}
+                      {q.page !== null && <span className="ml-2 font-normal text-muted">(p. {q.page})</span>}
+                    </p>
+                    {q.type === "mcq" ? (
+                      <div className="mt-3 space-y-1">
+                        {q.options.map((opt) => {
+                          const picked = answers[i] === opt;
+                          const right = grade && opt === q.answer;
+                          const wrong = grade && picked && !right;
+                          return (
+                            <label key={opt} className={`flex items-start gap-2.5 rounded-[3px] px-2 py-1.5 transition ${
+                              grade ? "cursor-default" : "cursor-pointer hover:bg-bg"}`}>
+                              <input type="radio" name={`q${i}`} checked={picked} disabled={!!grade}
+                                     onChange={() => setAnswers((a) => a.map((x, j) => (j === i ? opt : x)))} className="mt-1" />
+                              <span className={right ? "hl hl-solid hl-n2 px-0.5 font-semibold" : wrong ? "struck text-muted" : picked ? "font-semibold text-accent" : ""}>
+                                {opt}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <textarea value={answers[i] ?? ""} disabled={!!grade} rows={2} maxLength={1000}
+                                onChange={(e) => setAnswers((a) => a.map((x, j) => (j === i ? e.target.value : x)))}
+                                className="field mt-3 font-medium text-accent" placeholder="Your answer" />
+                    )}
+                    {grade && (
+                      <div className="mt-3 space-y-1 leading-6">
+                        <p className={q.correct ? "font-semibold text-ok" : "font-semibold text-danger"}>
+                          {q.correct ? "Correct" : "Not quite"}: {q.feedback}
+                        </p>
+                        {q.type === "short" && <p><span className="text-muted">Answer:</span> <span className="hl hl-solid hl-n2 px-0.5">{q.answer}</span></p>}
+                        <p className="text-muted">{q.explanation}</p>
+                      </div>
+                    )}
+                  </div>
                 </li>
               ))}
             </ol>
             {!grade && (
-              <button className="btn-primary" onClick={() => void submit()} disabled={busy !== null || answers.every((a) => !a.trim())}>
+              <button className="btn-primary mt-2" onClick={() => void submit()} disabled={busy !== null || answers.every((a) => !a.trim())}>
                 {busy === "grading" ? <><Spinner /> Checking…</> : "Check my answers"}
               </button>
             )}
@@ -189,21 +198,21 @@ export function QuizView({ initialFileId, refreshKey }: { initialFileId: string 
       </div>
 
       <aside>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Past quizzes</h3>
-        <ul className="mt-2 max-h-[32rem] space-y-1 overflow-y-auto">
+        <h3 className="label px-2">Past quizzes</h3>
+        <ul className="mt-2 max-h-[32rem] space-y-0.5 overflow-y-auto">
           {history.map((h) => (
             <li key={h.quiz_id}>
               <button onClick={() => void openPast(h.quiz_id)} disabled={busy !== null}
-                      className={`w-full rounded-lg px-2 py-1.5 text-left text-xs transition hover:bg-surface ${
+                      className={`w-full rounded-[3px] px-2 py-1.5 text-left text-xs transition hover:bg-surface ${
                         quiz?.quiz_id === h.quiz_id ? "bg-surface" : ""}`}>
-                <span className="line-clamp-1 font-medium">{h.file_name ?? "Quiz"}{h.topic ? ` · ${h.topic}` : ""}</span>
+                <span className="line-clamp-1 text-sm font-semibold">{h.file_name ?? "Quiz"}{h.topic ? ` · ${h.topic}` : ""}</span>
                 <span className="text-muted">
-                  {h.score === null ? "not submitted" : `${h.score}/${h.total}`} · {new Date(h.created_at).toLocaleDateString()}
+                  {h.score === null ? "not submitted" : <b className="text-danger">{h.score}/{h.total}</b>} · {new Date(h.created_at).toLocaleDateString()}
                 </span>
               </button>
             </li>
           ))}
-          {history.length === 0 && <li className="text-xs text-muted">No quizzes yet.</li>}
+          {history.length === 0 && <li className="px-2 text-xs text-muted">No quizzes yet.</li>}
         </ul>
       </aside>
     </section>
