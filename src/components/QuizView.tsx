@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { Quiz, QuizSummary } from "@/lib/types";
 import { docName, useFiles } from "@/lib/useFiles";
+import { Spinner } from "./Spinner";
 
 type Grade = { score: number; total: number; answers: string[]; results: Quiz["questions"] };
 
@@ -122,7 +123,7 @@ export function QuizView({ initialFileId, refreshKey }: { initialFileId: string 
           </label>
           <div className="sm:col-span-2">
             <button type="submit" className="btn-primary" disabled={!chosen || busy !== null}>
-              {busy === "making" ? "Writing questions…" : "Make a quiz"}
+              {busy === "making" ? <><Spinner /> Writing questions…</> : "Make a quiz"}
             </button>
           </div>
         </form>
@@ -180,7 +181,7 @@ export function QuizView({ initialFileId, refreshKey }: { initialFileId: string 
             </ol>
             {!grade && (
               <button className="btn-primary" onClick={() => void submit()} disabled={busy !== null || answers.every((a) => !a.trim())}>
-                {busy === "grading" ? "Checking…" : "Check my answers"}
+                {busy === "grading" ? <><Spinner /> Checking…</> : "Check my answers"}
               </button>
             )}
           </div>

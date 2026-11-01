@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, stream, type StreamEvent } from "@/lib/api";
 import type { AgentRun, RunDetail } from "@/lib/types";
 import { useReveal } from "@/lib/useReveal";
+import { Loading, Spinner } from "./Spinner";
 
 type Item =
   | { type: "step"; tool: string; args: Record<string, unknown>; output: unknown; approved?: boolean }
@@ -148,7 +149,7 @@ export function Agent() {
           <input value={goal} onChange={(e) => setGoal(e.target.value)} maxLength={2000} aria-label="Goal"
                  placeholder="e.g. Make a task for every action item in my latest voice note" className="field" />
           <button type="submit" disabled={busy || !goal.trim()} className="btn-primary shrink-0">
-            {busy ? "Working…" : "Run"}
+            {busy ? <><Spinner /> Working…</> : "Run"}
           </button>
         </form>
         <p className="text-xs text-muted">The agent reads freely, but asks you before it creates a task or saves a draft.</p>
@@ -184,7 +185,7 @@ export function Agent() {
             if (it.type === "answer") return <AnswerCard key={i} text={it.text} live={it.live} />;
             return <li key={i} role="alert" className="text-sm text-danger">{it.message}</li>;
           })}
-          {busy && items.at(-1)?.type !== "answer" && <li className="text-sm text-muted">Working…</li>}
+          {busy && items.at(-1)?.type !== "answer" && <li><Loading text="Working…" /></li>}
         </ol>
       </div>
 

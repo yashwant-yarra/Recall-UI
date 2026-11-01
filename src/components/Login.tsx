@@ -3,6 +3,7 @@
 import { FirebaseError } from "firebase/app";
 import { useState } from "react";
 import { useAuth } from "./AuthProvider";
+import { Spinner } from "./Spinner";
 
 const MESSAGES: Record<string, string> = {
   "auth/invalid-credential": "Wrong email or password.",
@@ -67,7 +68,7 @@ export function Login() {
           </label>
           {error && <p role="alert" className="text-sm text-danger">{error}</p>}
           <button type="submit" disabled={busy} className="btn-primary w-full">
-            {busy ? "…" : mode === "in" ? "Sign in" : "Create account"}
+            {busy ? <Spinner label="Signing in" /> : mode === "in" ? "Sign in" : "Create account"}
           </button>
         </form>
         <button

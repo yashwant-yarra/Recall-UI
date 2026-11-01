@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type { Me } from "@/lib/types";
+import { Spinner } from "./Spinner";
 
 // For display only; the API enforces the real limits (its DAILY_* settings).
 const LIMITS = [
@@ -56,7 +57,7 @@ export function Account({ me, onPlanChange }: { me: Me | null; onPlanChange: () 
     <section className="max-w-xl space-y-6">
       <div className="card p-5">
         <p className="text-sm text-muted">Current plan</p>
-        <p className="mt-1 text-2xl font-semibold">{me ? (pro ? "Pro" : "Free") : "…"}</p>
+        <p className="mt-1 text-2xl font-semibold">{me ? (pro ? "Pro" : "Free") : <Spinner className="h-6 w-6" label="Loading plan" />}</p>
         <table className="mt-4 w-full text-sm">
           <thead>
             <tr className="text-left text-muted">
@@ -77,7 +78,7 @@ export function Account({ me, onPlanChange }: { me: Me | null; onPlanChange: () 
         </table>
         {!pro && (
           <button onClick={() => void upgrade()} disabled={state !== "idle" || !me} className="btn-primary mt-5">
-            {state === "opening" ? "Opening Razorpay…" : state === "waiting" ? "Waiting for payment…" : "Upgrade to Pro"}
+            {state === "opening" ? <><Spinner /> Opening Razorpay…</> : state === "waiting" ? <><Spinner /> Waiting for payment…</> : "Upgrade to Pro"}
           </button>
         )}
         {state === "waiting" && (

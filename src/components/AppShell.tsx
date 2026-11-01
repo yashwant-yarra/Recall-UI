@@ -9,10 +9,12 @@ import { useAuth } from "./AuthProvider";
 import { Chat } from "./Chat";
 import { Library } from "./Library";
 import { QuizView } from "./QuizView";
+import { Talk } from "./Talk";
 
 const TABS = [
   { id: "library", label: "Library" },
   { id: "chat", label: "Ask" },
+  { id: "talk", label: "Talk" },
   { id: "quiz", label: "Quiz" },
   { id: "agent", label: "Agent" },
   { id: "account", label: "Account" },
@@ -95,6 +97,7 @@ export function AppShell() {
         <div hidden={tab !== "quiz"}>
           <QuizView key={`quiz-${focus.quizN}`} initialFileId={focus.quiz} refreshKey={visits} />
         </div>
+        <div hidden={tab !== "talk"}><Talk refreshKey={visits} /></div>
         <div hidden={tab !== "agent"}><Agent /></div>
         <div hidden={tab !== "account"}><Account me={me} onPlanChange={refreshMe} /></div>
       </main>

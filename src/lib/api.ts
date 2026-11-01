@@ -116,3 +116,26 @@ export async function upload(file: Blob, mime: string, name?: string): Promise<s
   if (!put.ok) throw new ApiError(put.status, `Upload to storage failed (${put.status})`);
   return file_id;
 }
+
+/** Send a recording as the raw request body (e.g. voice input); returns the JSON reply. */
+export async function postAudio<T>(path: string, audio: Blob, mime: string): Promise<T> {
+  const res = await fetch(`${API}${path}`, {
+    method: "POST",
+    headers: { ...(await authHeaders()), "Content-Type": mime },
+    body: audio,
+  });
+  if (!res.ok) throw await errorFrom(res);
+  return res.json() as Promise<T>;
+}
+
+/** POST JSON and get audio back (e.g. read-aloud). The signal lets a Stop button cancel it. */
+export async function fetchAudio(path: string, body: unknown, signal?: AbortSignal): Promise<Blob> {
+  const res = await fetch(`${API}${path}`, {
+    method: "POST",
+    headers: { ...(await authHeaders()), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!res.ok) throw await errorFrom(res);
+  return res.blob();
+}

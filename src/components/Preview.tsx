@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { Loading } from "./Spinner";
 
 type FileUrl = { url: string; mime_type: string; kind: "doc" | "audio"; name: string | null };
 type Page = { page: number | null; text: string };
@@ -59,7 +60,7 @@ export function Preview({ fileId, page, onClose }: { fileId: string; page?: numb
         </div>
         <div className="min-h-0 flex-1 overflow-auto">
           {error && <p role="alert" className="p-4 text-sm text-danger">{error}</p>}
-          {!file && !error && <p className="p-4 text-sm text-muted">Loading…</p>}
+          {!file && !error && <div className="p-4"><Loading /></div>}
           {file && pdf && (
             // #page=N is understood by the PDF viewers in Chrome, Edge, Firefox and Safari.
             <iframe src={`${file.url}#page=${page ?? 1}`} title={file.name ?? "Document"} className="h-full w-full" />
@@ -69,13 +70,13 @@ export function Preview({ fileId, page, onClose }: { fileId: string; page?: numb
             <div className="space-y-4 p-4">
               <audio controls src={file.url} className="w-full" />
               <h3 className="text-sm font-semibold">Transcript</h3>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed">{pages ? pages.map((p) => p.text).join("\n") : "Loading…"}</p>
+              {pages ? <p className="whitespace-pre-wrap text-sm leading-relaxed">{pages.map((p) => p.text).join("\n")}</p> : <Loading text="Loading transcript…" />}
             </div>
           )}
           {file && file.mime_type.includes("wordprocessingml") && (
             <div className="whitespace-pre-wrap p-4 text-sm leading-relaxed">
               <p className="mb-3 text-xs text-muted">Word files can&apos;t be shown in the browser, so this is the text extracted from it.</p>
-              {pages ? pages.map((p) => p.text).join("\n\n") : "Loading…"}
+              {pages ? pages.map((p) => p.text).join("\n\n") : <Loading text="Loading text…" />}
             </div>
           )}
         </div>

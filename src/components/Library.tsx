@@ -5,6 +5,7 @@ import { ACCEPT, api, mimeFor, upload } from "@/lib/api";
 import type { FileItem } from "@/lib/types";
 import { Preview } from "./Preview";
 import { Recorder } from "./Recorder";
+import { Loading } from "./Spinner";
 
 const STATUS_STYLE: Record<FileItem["status"], string> = {
   pending: "bg-bg text-muted",
@@ -106,11 +107,11 @@ export function Library({ onOpen }: { onOpen: (tab: "chat" | "quiz", fileId: str
         </div>
       </div>
 
-      {busy && <p className="text-sm text-muted">Uploading {busy}…</p>}
+      {busy && <Loading text={`Uploading ${busy}…`} />}
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
       {files === null ? (
-        <p className="text-sm text-muted">Loading…</p>
+        <Loading />
       ) : files.length === 0 ? (
         <p className="text-sm text-muted">Nothing here yet. Upload a document or record a voice note.</p>
       ) : (

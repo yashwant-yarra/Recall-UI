@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 // Formats the API accepts, in order of preference. Chrome and Firefox record webm; Safari records mp4.
-const FORMATS = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+export const FORMATS = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
 
 /** Records a voice note in the browser and hands back the audio with the plain mime type the API expects. */
 export function Recorder({ onDone }: { onDone: (audio: Blob, mime: string) => void }) {
@@ -54,8 +54,11 @@ export function Recorder({ onDone }: { onDone: (audio: Blob, mime: string) => vo
           <span className="h-2.5 w-2.5 rounded-full bg-danger" aria-hidden /> Record voice note
         </button>
       ) : (
-        <button onClick={() => recorder.current?.stop()} className="btn border-danger text-danger">
-          <span className="h-2.5 w-2.5 animate-pulse rounded-sm bg-danger" aria-hidden /> Stop ·{" "}
+        <button onClick={() => recorder.current?.stop()} aria-pressed aria-label="Stop recording" title="Stop recording"
+                className="btn border-danger bg-danger/10 text-danger tabular-nums">
+          <svg viewBox="0 0 24 24" className="h-4 w-4 animate-pulse" aria-hidden>
+            <rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" />
+          </svg>
           {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
         </button>
       )}

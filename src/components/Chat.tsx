@@ -4,14 +4,31 @@ import { useCallback, useEffect, useState } from "react";
 import { api, stream } from "@/lib/api";
 import type { ChatSummary, Source, StoredMessage } from "@/lib/types";
 import { docName, useFiles } from "@/lib/useFiles";
+import { LANGUAGES } from "@/lib/languages";
 import { useReveal } from "@/lib/useReveal";
+import { MicButton } from "./MicButton";
 import { Preview } from "./Preview";
+import { SpeakButton } from "./SpeakButton";
+import { Spinner } from "./Spinner";
+
+const LANG_KEY = "recall.answerLanguage";
 
 type Message = { role: "user" | "assistant"; text: string; sources?: Source[]; error?: string; live?: boolean };
 
 // Older saved citations have no `kind`; a missing page means a voice note.
 const where = (s: Source) => ((s.kind ?? (s.page === null ? "audio" : "doc")) === "audio" ? "voice note" : `p. ${s.page}`);
 const label = (s: Source) => (s.name ? `${s.name}, ${where(s)}` : where(s));
+
+/** Renders the model's **bold** as bold (the only markdown it uses much); the rest stays plain text. */
+function Bold({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/(\*\*[^*\n]+\*\*)/g).map((s, i) =>
+        s.startsWith("**") && s.endsWith("**") && s.length > 4 ? <strong key={i}>{s.slice(2, -2)}</strong> : <span key={i}>{s}</span>,
+      )}
+    </>
+  );
+}
 
 /** Turns "[1]" and "[1, 3]" in an answer into small citation markers that name their source. */
 function Cited({ text, sources, onCite }: { text: string; sources: Source[]; onCite: (s: Source) => void }) {
@@ -20,7 +37,7 @@ function Cited({ text, sources, onCite }: { text: string; sources: Source[]; onC
     <>
       {parts.map((part, i) => {
         const match = part.match(/^\[(.+)\]$/);
-        if (!match) return <span key={i}>{part}</span>;
+        if (!match) return <Bold key={i} text={part} />;
         return match[1].split(",").map((n) => {
           const src = sources.find((s) => s.n === Number(n.trim()));
           return (
@@ -44,12 +61,13 @@ function Answer({ m, streaming, onCite }: { m: Message; streaming: boolean; onCi
   return (
     <div className="card max-w-[95%] px-4 py-3 text-sm">
       <p className="whitespace-pre-wrap leading-relaxed">
-        {m.text ? <Cited text={shown} sources={m.sources ?? []} onCite={onCite} /> : !m.error && <span className="text-muted">Thinking…</span>}
+        {m.text ? <Cited text={shown} sources={m.sources ?? []} onCite={onCite} /> : !m.error && <span className="inline-flex items-center gap-2 text-muted"><Spinner /> Thinking…</span>}
       </p>
       {m.error && <p role="alert" className="mt-2 text-danger">{m.error}</p>}
-      {done && m.text && m.sources && m.sources.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1 border-t border-border pt-2">
-          {m.sources.map((s) => (
+      {done && m.text && !m.error && (
+        <div className="mt-3 flex flex-wrap items-center gap-1 border-t border-border pt-2">
+          <SpeakButton text={m.text} />
+          {(m.sources ?? []).map((s) => (
             <button key={s.n} type="button" onClick={() => onCite(s)} title="Open the source"
                     className="pill bg-bg text-muted transition hover:text-accent">
               [{s.n}] {label(s)}
@@ -66,6 +84,14 @@ export function Chat({ initialFileId, refreshKey }: { initialFileId: string | nu
   const [chatId, setChatId] = useState<string | null>(null);
   const [fileId, setFileId] = useState<string | null>(initialFileId); // null = all documents
   const [mode, setMode] = useState<"explain" | "answer">("explain");
+  // "" = answer in the question's language. Remembered in this browser only (a convenience).
+  const [language, setLanguage] = useState<string>(() => {
+    try {
+      return localStorage.getItem(LANG_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
   const docs = useFiles(refreshKey).filter((f) => f.status === "ready");
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [question, setQuestion] = useState("");
@@ -113,7 +139,7 @@ export function Chat({ initialFileId, refreshKey }: { initialFileId: string | nu
     setMessages((ms) => [...ms, { role: "user", text: q }, { role: "assistant", text: "", live: true }]);
     try {
       // The document only matters when starting a chat; an existing chat keeps its own.
-      await stream("/api/v1/ask", { question: q, chat_id: chatId, file_id: chatId ? null : fileId, mode }, ({ event, data }) => {
+      await stream("/api/v1/ask", { question: q, chat_id: chatId, file_id: chatId ? null : fileId, mode, language: language || null }, ({ event, data }) => {
         if (event === "chat") setChatId((data as { chat_id: string }).chat_id);
         else if (event === "sources") patchLast((m) => ({ ...m, sources: data as Source[] }));
         else if (event === "token") patchLast((m) => ({ ...m, text: m.text + (data as string) }));
@@ -167,6 +193,18 @@ export function Chat({ initialFileId, refreshKey }: { initialFileId: string | nu
               </button>
             ))}
           </div>
+          <select value={language} aria-label="Answer language" className="field w-auto"
+                  onChange={(e) => {
+                    setLanguage(e.target.value);
+                    try {
+                      localStorage.setItem(LANG_KEY, e.target.value);
+                    } catch {
+                      // private mode or blocked storage: the choice just isn't remembered
+                    }
+                  }}>
+            <option value="">Answer in: same as question</option>
+            {LANGUAGES.map((l) => <option key={l} value={l}>Answer in: {l}</option>)}
+          </select>
         </div>
         <p className="text-xs text-muted">
           {mode === "explain"
@@ -187,9 +225,10 @@ export function Chat({ initialFileId, refreshKey }: { initialFileId: string | nu
         </div>
         <form onSubmit={ask} className="flex gap-2">
           <input value={question} onChange={(e) => setQuestion(e.target.value)} maxLength={2000}
-                 placeholder={fileId ? "Ask a doubt about this document…" : "Ask a doubt about your documents…"} className="field" aria-label="Question" />
+                 placeholder={fileId ? "Ask a doubt about this document, in any language…" : "Ask a doubt about your documents, in any language…"} className="field" aria-label="Question" />
+          <MicButton disabled={busy} onText={(t) => setQuestion((q) => (q.trim() ? `${q.trim()} ${t}` : t))} />
           <button type="submit" disabled={busy || !question.trim()} className="btn-primary shrink-0">
-            {busy ? "…" : "Ask"}
+            {busy ? <Spinner label="Answering" /> : "Ask"}
           </button>
         </form>
       </div>
