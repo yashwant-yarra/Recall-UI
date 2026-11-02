@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import type { Me, Tier } from "@/lib/types";
 import { Spinner } from "./Spinner";
 import { useAuth } from "./AuthProvider";
+import { loadCashfree } from "@/lib/cashfree";
 
 // The plan table comes from the API (`me.limits`), so it always shows the limits the server enforces.
 const cell = (n: number | null) => (n === null ? "Unlimited" : n === 0 ? "Not included" : n.toLocaleString());
@@ -96,21 +97,32 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
     setBuying(tier);
     setState("opening");
     paidUntilAtStart.current = me?.paid_until ?? null;
-    // Open the tab now, inside the click: browsers block popups opened later, after an await.
-    const tab = window.open("", "_blank");
     try {
-      const { url } = await api<{ url: string }>("/api/v1/billing/checkout", { method: "POST", body: { tier, phone: digits } });
-      if (tab) tab.location.href = url;
-      else window.location.href = url;
-      // The pass is granted only when Cashfree's webhook arrives, so check every few seconds (up to 5 min).
+      const [order, Cashfree] = await Promise.all([
+        api<{ payment_session_id: string; mode: "sandbox" | "production" }>("/api/v1/billing/checkout", { method: "POST", body: { tier, phone: digits } }),
+        loadCashfree(),
+      ]);
+      // Cashfree's checkout opens as a popup over this page and resolves when it closes, so the user never
+      // leaves Recall. (In some in-app browsers it redirects instead and comes back to the return URL.)
+      const result = await Cashfree({ mode: order.mode }).checkout({ paymentSessionId: order.payment_session_id, redirectTarget: "_modal" });
+      if (result.redirect) return;
+      if (!result.paymentDetails) {
+        // Closed or failed: nothing to wait for. One check in case the payment went through just before closing.
+        await onPlanChange();
+        setState("idle");
+        setBuying(null);
+        return;
+      }
+      // Paid. The pass is granted when Cashfree's webhook arrives (usually within seconds): check every few
+      // seconds, up to 2 minutes. The effect above stops this as soon as paid_until moves.
       setState("waiting");
+      void onPlanChange();
       let tries = 0;
       poll.current = setInterval(() => {
-        if (++tries > 100 && poll.current) { clearInterval(poll.current); poll.current = null; setState("idle"); setBuying(null); }
+        if (++tries > 40 && poll.current) { clearInterval(poll.current); poll.current = null; setState("idle"); setBuying(null); }
         void onPlanChange();
       }, 3000);
     } catch (e) {
-      tab?.close();
       setError((e as Error).message);
       setState("idle");
       setBuying(null);
@@ -124,7 +136,7 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
   // The column that is yours is highlighted; during the trial that is Pro, the tier it gives.
   const mine = me ? (paid ? me.plan : trialing ? "pro" : "free") : null;
   const buyLabel = (tier: Tier, text: string) =>
-    buying === tier && state === "opening" ? <><Spinner /> Opening Cashfree…</> : buying === tier && state === "waiting" ? <><Spinner /> Waiting for payment…</> : text;
+    buying === tier && state === "opening" ? <><Spinner /> Opening Cashfree…</> : buying === tier && state === "waiting" ? <><Spinner /> Confirming payment…</> : text;
   return (
     <section className="max-w-4xl space-y-6">
       <p className="max-w-[65ch] text-sm text-muted">Your account details and plan, all in one place.</p>
@@ -235,7 +247,7 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
           </div>
         )}
         {state === "waiting" && (
-          <p className="mt-2 text-xs text-muted">Finish paying in the Cashfree tab. This page updates by itself once the payment is confirmed.</p>
+          <p className="mt-2 text-xs text-muted">Payment received. Your plan updates here in a few seconds.</p>
         )}
         {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
       </div>
