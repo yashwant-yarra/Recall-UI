@@ -9,6 +9,8 @@ import { useAuth } from "./AuthProvider";
 // The plan table comes from the API (`me.limits`), so it always shows the limits the server enforces.
 const cell = (n: number | null) => (n === null ? "Unlimited" : n === 0 ? "Not included" : n.toLocaleString());
 const TIER_NAME: Record<string, string> = { free: "Free", pro: "Pro", ultra: "Ultra" };
+// Buying is hidden until NEXT_PUBLIC_PAYMENTS_ENABLED=true (apphosting.yaml). Switch to Free stays for anyone paying.
+const PAYMENTS_ON = process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === "true";
 
 export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanChange: () => Promise<void>; onTrial: () => Promise<void> }) {
   const { user } = useAuth();
@@ -223,12 +225,15 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
         )}
         {/* One row of plan actions: Free can buy either tier, Pro can move up to Ultra, and anyone paying can
             switch back to Free. The "are you sure" prompt opens on its own line below. */}
-        {me && (me.plan !== "ultra" || (canSwitch && !confirming)) && (
+        {!PAYMENTS_ON && me && !paid && (
+          <p className="mt-5 text-sm text-muted">Paid plans are coming soon.</p>
+        )}
+        {me && ((PAYMENTS_ON && me.plan !== "ultra") || (canSwitch && !confirming)) && (
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            {me.plan === "free" && (
+            {PAYMENTS_ON && me.plan === "free" && (
               <button onClick={() => void upgrade("pro")} disabled={busy} className="btn-primary">{buyLabel("pro", "Get Pro")}</button>
             )}
-            {me.plan !== "ultra" && (
+            {PAYMENTS_ON && me.plan !== "ultra" && (
               <button onClick={() => void upgrade("ultra")} disabled={busy} className={me.plan === "free" ? "btn" : "btn-primary"}>
                 {buyLabel("ultra", me.plan === "pro" ? "Upgrade to Ultra" : "Get Ultra")}
               </button>
