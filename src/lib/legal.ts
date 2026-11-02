@@ -10,16 +10,17 @@ export const BUSINESS = {
 // Plan prices in INR per month. Keep in step with the Razorpay plans.
 export const PRICES = { pro: 699, ultra: 1999 } as const;
 
-// Daily limits per plan, mirroring the backend defaults in config.py. ponytail: copied by hand; if the
+// Weekly limits per plan, mirroring the backend defaults in config.py. ponytail: copied by hand; if the
 // backend limits change, update here (the Account page reads the live values from the API).
 export const PLAN_LIMITS = [
-  { name: "Uploads", free: "3", pro: "15", ultra: "50" },
-  { name: "Questions", free: "15", pro: "150", ultra: "500" },
-  { name: "Quizzes", free: "2", pro: "10", ultra: "30" },
-  { name: "Agent runs", free: "None", pro: "15", ultra: "50" },
-  { name: "Voice inputs", free: "10", pro: "100", ultra: "300" },
+  { name: "Uploads", free: "6", pro: "30", ultra: "80" },
+  { name: "Total storage", free: "50 MB", pro: "1 GB", ultra: "5 GB" },
+  { name: "Questions", free: "30", pro: "200", ultra: "600" },
+  { name: "Quizzes", free: "4", pro: "10", ultra: "30" },
+  { name: "Agent runs", free: "None", pro: "10", ultra: "40" },
+  { name: "Voice inputs", free: "20", pro: "100", ultra: "300" },
   { name: "Live voice tutor", free: "None", pro: "20 min", ultra: "60 min" },
-  { name: "Web-search answers", free: "None", pro: "30", ultra: "100" },
+  { name: "Web-search answers", free: "None", pro: "20", ultra: "80" },
 ] as const;
 
 export const TRIAL_DAYS = 7;

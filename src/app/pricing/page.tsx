@@ -9,9 +9,9 @@ const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
 export default function Pricing() {
   return (
-    <LegalPage title="Pricing" intro="Start free. Upgrade when you need higher daily limits. All prices are in Indian Rupees (INR), billed monthly, and you can cancel any time.">
+    <LegalPage title="Pricing" intro="Start free. Upgrade when you need higher weekly limits. All prices are in Indian Rupees (INR), billed monthly, and you can cancel any time.">
       <div className="grid gap-3 sm:grid-cols-3">
-        {([["Free", "₹0", "per month", "Try Recall with small daily limits."], ["Pro", inr(PRICES.pro), "per month", "For regular study. Includes live voice tutor, agent and web-search answers."], ["Ultra", inr(PRICES.ultra), "per month", "For heavy use, with the highest daily limits."]] as const).map(([name, price, per, blurb]) => (
+        {([["Free", "₹0", "per month", "Try Recall with small weekly limits."], ["Pro", inr(PRICES.pro), "per month", "For regular study. Includes live voice tutor, agent and web-search answers."], ["Ultra", inr(PRICES.ultra), "per month", "For heavy use, with the highest weekly limits."]] as const).map(([name, price, per, blurb]) => (
           <div key={name} className="card p-4">
             <p className="label">{name}</p>
             <p className="mt-2 text-3xl font-extrabold">{price}</p>
@@ -22,13 +22,13 @@ export default function Pricing() {
       </div>
 
       <h2>What each plan includes</h2>
-      <p>Limits reset every day at 00:00 UTC (5:30 AM IST).</p>
+      <p>Usage limits reset every Monday at 00:00 UTC (5:30 AM IST). Total storage is the space your files take up at any time, so it frees up when you delete files.</p>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <caption className="sr-only">Daily limits by plan</caption>
+          <caption className="sr-only">Weekly limits by plan</caption>
           <thead>
             <tr className="border-b border-border">
-              <th scope="col" className="py-2 pr-3 label">Per day</th>
+              <th scope="col" className="py-2 pr-3 label">Limits</th>
               <th scope="col" className="py-2 pr-3 label">Free</th>
               <th scope="col" className="py-2 pr-3 label">Pro</th>
               <th scope="col" className="py-2 label">Ultra</th>

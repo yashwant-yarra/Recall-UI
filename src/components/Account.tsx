@@ -159,7 +159,7 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
       </div>
       <div className="sheet px-5 py-6 sm:px-8">
         <p className="label">Plan comparison</p>
-        <h2 className="mt-2 text-xl font-semibold">Your daily allowance</h2>
+        <h2 className="mt-2 text-xl font-semibold">Your weekly allowance</h2>
         <p className="mt-1 text-sm text-muted">Compare what’s included with each plan.</p>
         <div className="mt-6 overflow-x-auto">
         <table className="w-full min-w-[26rem] text-sm">

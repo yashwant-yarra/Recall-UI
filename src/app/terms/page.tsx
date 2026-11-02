@@ -23,7 +23,7 @@ export default function Terms() {
 
       <h2>Acceptable use</h2>
       <ul>
-        <li>No attempts to break, overload or reverse-engineer the service, or to get around daily limits.</li>
+        <li>No attempts to break, overload or reverse-engineer the service, or to get around weekly limits.</li>
         <li>No sharing one paid account among many people.</li>
         <li>No use of the service to harass, deceive or harm others.</li>
       </ul>
@@ -34,7 +34,7 @@ export default function Terms() {
         <li>Recall has a Free plan and two paid plans, Pro (₹{PRICES.pro} per month) and Ultra (₹{PRICES.ultra} per month). Prices are in Indian Rupees and shown on the <Link href="/pricing">pricing page</Link>.</li>
         <li>Paid plans renew automatically every month until cancelled. Payments are handled by Razorpay; we never see or store your card details.</li>
         <li>The Pro trial lasts {TRIAL_DAYS} days. When it ends you return to Free unless you subscribe.</li>
-        <li>Daily limits apply to every plan and are shown on the pricing page. We may change limits and prices for future billing periods; we will tell you before a price change affects your next charge.</li>
+        <li>Weekly limits apply to every plan and are shown on the pricing page. We may change limits and prices for future billing periods; we will tell you before a price change affects your next charge.</li>
         <li>Cancellation and refunds are covered in the <Link href="/refund">refund and cancellation policy</Link>.</li>
       </ul>
 
