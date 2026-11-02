@@ -18,3 +18,21 @@ export function Loading({ text = "Loading…" }: { text?: string }) {
     </p>
   );
 }
+export function LoadingMark() {
+  return (
+    <svg viewBox="0 0 160 128" className="recall-loading h-32 w-40 text-accent" fill="none" aria-hidden="true">
+      <path d="M20 104h120" stroke="var(--border)" strokeWidth="1" />
+      <path className="recall-loading-highlight" d="M48 72h65" stroke="var(--hl-1)" strokeWidth="17" strokeLinecap="square" />
+      <g stroke="currentColor" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round">
+        <path pathLength="1" className="recall-loading-spine" d="M58 89V35" />
+        <path pathLength="1" className="recall-loading-loop" d="M58 35h23c25 0 25 30 0 30H58" />
+        <path pathLength="1" className="recall-loading-leg" d="m81 65 23 24" />
+      </g>
+      <g stroke="var(--muted)" strokeWidth="2" strokeLinecap="round">
+        <path className="recall-loading-note" d="M24 43h10m-6 7h6" />
+        <path className="recall-loading-note" d="M123 77h12m-12 7h7" />
+      </g>
+    </svg>
+  );
+}
+

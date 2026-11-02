@@ -82,7 +82,10 @@ export async function stream(path: string, body: unknown, onEvent: (e: StreamEve
 // Mime types the API accepts (its allow-list), with fallbacks for names browsers report differently.
 const MIME_BY_EXT: Record<string, string> = {
   pdf: "application/pdf",
+  doc: "application/msword",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ppt: "application/vnd.ms-powerpoint",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   txt: "text/plain",
   webm: "audio/webm",
   mp3: "audio/mpeg",
@@ -138,4 +141,15 @@ export async function fetchAudio(path: string, body: unknown, signal?: AbortSign
   });
   if (!res.ok) throw await errorFrom(res);
   return res.blob();
+}
+
+/** Read 24 kHz mono 16-bit little-endian PCM as it is generated. */
+export async function streamAudio(text: string, signal: AbortSignal): Promise<ReadableStream<Uint8Array>> {
+  const res = await fetch(`${API}/api/v1/speech/tts/stream`, {
+    method: "POST", headers: { ...(await authHeaders()), "Content-Type": "application/json" },
+    body: JSON.stringify({ text }), signal,
+  });
+  if (!res.ok) throw await errorFrom(res);
+  if (!res.body) throw new ApiError(500, "No audio stream");
+  return res.body;
 }

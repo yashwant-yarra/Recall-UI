@@ -1,15 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ACCEPT, api, mimeFor, upload } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import { api, upload } from "@/lib/api";
 import type { FileItem } from "@/lib/types";
 import { Preview } from "./Preview";
 import { Recorder } from "./Recorder";
 import { Loading } from "./Spinner";
+import { UploadDialog } from "./UploadDialog";
 
 const TYPE_LABEL: Record<string, string> = {
   "application/pdf": "PDF",
+  "application/msword": "DOC",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+  "application/vnd.ms-powerpoint": "PPT",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": "PPTX",
   "text/plain": "TXT",
 };
 
@@ -31,13 +35,13 @@ function StatusMark({ status }: { status: FileItem["status"] }) {
   return <span className={`${box} ${status === "processing" ? "animate-pulse border-warn" : "border-dashed border-muted"}`} aria-hidden />;
 }
 
-export function Library({ onOpen }: { onOpen: (tab: "chat" | "quiz", fileId: string) => void }) {
+export function Library({ onOpen, free }: { onOpen: (fileId: string) => void; free: boolean }) {
   const [files, setFiles] = useState<FileItem[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null); // what is uploading right now
   const [error, setError] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null); // file waiting for "Yes, delete"
-  const input = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -89,25 +93,17 @@ export function Library({ onOpen }: { onOpen: (tab: "chat" | "quiz", fileId: str
     }
   }
 
-  function pick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // allow picking the same file again
-    if (!file) return;
-    const mime = mimeFor(file);
-    if (!mime) return setError("Supported: PDF, DOCX, TXT, and audio (webm, mp3, m4a, wav).");
-    void send(file, mime, file.name);
-  }
-
   return (
     <section className="max-w-4xl space-y-5">
       <div className="flex flex-col gap-4 border-b-2 border-fg pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-lg font-bold">Add to your library</h2>
-          <p className="mt-1 text-sm text-muted">Documents are split and indexed; voice notes are transcribed and summarized.</p>
+          <p className="mt-1 max-w-[60ch] text-sm text-muted">Upload documents and record voice notes to use across Ask, Talk, and Agent.</p>
+          {/* The numbers match the API's Free limits (settings free_max_files / free_max_upload_size). */}
+          {free && <p className="mt-1 text-sm font-semibold">Free plan: up to 5 files at a time, 5 MB each{files ? ` (${files.length} of 5 used)` : ""}.</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <input ref={input} type="file" accept={ACCEPT} onChange={pick} className="hidden" />
-          <button onClick={() => input.current?.click()} disabled={!!busy} className="btn-primary">
+          <button onClick={() => setUploading(true)} disabled={!!busy} className="btn-primary">
             Upload file
           </button>
           <Recorder onDone={(audio, mime) => void send(audio, mime, `Voice note, ${new Date().toLocaleString()}`)} />
@@ -120,7 +116,15 @@ export function Library({ onOpen }: { onOpen: (tab: "chat" | "quiz", fileId: str
       {files === null ? (
         <Loading />
       ) : files.length === 0 ? (
-        <p className="py-6 text-sm text-muted">Nothing here yet. Upload a document or record a voice note.</p>
+        <div className="sheet ruled px-5 py-10 pl-[3.6rem] sm:px-8 sm:pl-[3.6rem]">
+          <p className="chapter !text-3xl sm:!text-4xl">An empty shelf</p>
+          <p className="mt-3 max-w-[52ch] text-sm leading-7 text-muted">Nothing here yet. Add your first source and it becomes something you can question.</p>
+          <ul className="mt-6 space-y-2 text-[0.97rem] font-semibold">
+            <li><span className="hl hl-solid hl-n1 px-1">PDF, DOCX or TXT</span> <span className="font-normal text-muted">&ndash; textbooks, slides, class notes</span></li>
+            <li><span className="hl hl-solid hl-n2 px-1">Voice note</span> <span className="font-normal text-muted">&ndash; record a lecture or your own recap</span></li>
+            <li><span className="hl hl-solid hl-n3 px-1">Scanned pages</span> <span className="font-normal text-muted">&ndash; read by OCR, searchable like text</span></li>
+          </ul>
+        </div>
       ) : (
         <ul className="sheet divide-y divide-border">
           {files.map((f) => (
@@ -157,8 +161,7 @@ export function Library({ onOpen }: { onOpen: (tab: "chat" | "quiz", fileId: str
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {f.status === "ready" && (
                     <>
-                      <button className="btn" onClick={() => onOpen("chat", f.file_id)}>Ask about this</button>
-                      {f.kind === "doc" && <button className="btn" onClick={() => onOpen("quiz", f.file_id)}>Quiz me</button>}
+                      <button className="btn" onClick={() => onOpen(f.file_id)}>Ask about this</button>
                     </>
                   )}
                   {f.status !== "pending" && <button className="btn" onClick={() => setPreviewing(f.file_id)}>Preview</button>}
@@ -180,6 +183,7 @@ export function Library({ onOpen }: { onOpen: (tab: "chat" | "quiz", fileId: str
           ))}
         </ul>
       )}
+      {uploading && <UploadDialog onUpload={(file, mime) => void send(file, mime, file.name)} onClose={() => setUploading(false)} />}
       {previewing && <Preview fileId={previewing} onClose={() => setPreviewing(null)} />}
     </section>
   );

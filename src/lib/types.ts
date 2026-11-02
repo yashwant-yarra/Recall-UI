@@ -15,9 +15,17 @@ export type FileItem = {
 
 export type Source = { n: number; chunk_id: string; file_id: string; kind?: "doc" | "audio"; page: number | null; name?: string | null };
 
+/** Created by the Agent after the student approved it. `due` is a calendar day, "YYYY-MM-DD". */
+export type Task = { id: string; title: string; due: string | null; done: boolean; file_id: string | null; file_name: string | null; created_at: string };
+export type Draft = { id: string; title: string; body: string; created_at: string };
+
+/** A web page the tutor's Google Search used. Never cited with [n]; shown under the answer. */
+export type WebSource = { kind: "web"; uri: string; title: string };
+export const isWeb = (c: Source | WebSource): c is WebSource => c.kind === "web";
+
 export type ChatSummary = { chat_id: string; title: string; created_at: string; file_id: string | null; file_name: string | null };
 
-export type StoredMessage = { role: "user" | "assistant"; content: string; citations: Source[]; created_at: string };
+export type StoredMessage = { role: "user" | "assistant"; content: string; citations: (Source | WebSource)[]; created_at: string };
 
 export type RunStep = {
   step_no: number;
@@ -27,7 +35,12 @@ export type RunStep = {
   status: "done" | "awaiting_approval" | "rejected";
 };
 
-export type Me = { user_id: string; plan: "free" | "pro" };
+/** One row of the plan table, straight from the API's settings. free 0 = Pro only; pro null = unlimited. */
+export type PlanLimit = { key: string; label: string; free: number; pro: number | null; ultra: number | null };
+export type Tier = "pro" | "ultra";
+/** The account's one free trial of Pro: running now, when it ends, and whether it can still be started. */
+export type Trial = { active: boolean; ends_at: string | null; available: boolean; blocked?: string | null };
+export type Me = { user_id: string; plan: "free" | Tier; email_verified?: boolean; trial?: Trial; limits?: PlanLimit[] };
 
 export type AgentRun = {
   run_id: string;

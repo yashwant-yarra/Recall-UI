@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo } from "next/font/google";
 import { AuthProvider } from "@/components/AuthProvider";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 
 // Variable Archivo with its width axis: condensed for chapter headings, normal for reading.

@@ -68,7 +68,8 @@
 }
 
 body {
-  background: var(--bg);
+  /* The desk: a faint dot grid so the grey isn't a void. */
+  background: radial-gradient(color-mix(in srgb, var(--fg) 14%, transparent) 1px, transparent 1.2px) 0 0 / 22px 22px, var(--bg);
   color: var(--fg);
   font-variant-numeric: tabular-nums;
 }
@@ -101,6 +102,11 @@ html {
   .sheet {
     @apply rounded-[3px] border border-border bg-surface;
     box-shadow: var(--shadow);
+  }
+  /* An empty page: a red margin rule down the left, like a fresh sheet of lined paper. */
+  .ruled {
+    background-image:
+      linear-gradient(90deg, transparent 2.6rem, color-mix(in srgb, var(--danger) 60%, transparent) 2.6rem, color-mix(in srgb, var(--danger) 60%, transparent) calc(2.6rem + 1px), transparent calc(2.6rem + 1px));
   }
   .card {
     @apply rounded-[3px] border border-border bg-surface;
@@ -170,6 +176,39 @@ html {
     text-decoration-color: var(--danger);
     text-decoration-thickness: 2px;
   }
+}
+
+@keyframes recall-write {
+  0% { stroke-dashoffset: 1; opacity: 0; }
+  8% { opacity: 1; }
+  30%, 75% { stroke-dashoffset: 0; opacity: 1; }
+  95%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+@keyframes recall-highlight {
+  0%, 40% { transform: scaleX(0); opacity: 1; }
+  65%, 85% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+
+@keyframes recall-notes {
+  0%, 100% { transform: translateY(3px); opacity: 0.3; }
+  50% { transform: translateY(-3px); opacity: 1; }
+}
+
+.recall-loading-highlight { transform-origin: 48px 72px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .recall-loading-spine,
+  .recall-loading-loop,
+  .recall-loading-leg {
+    stroke-dasharray: 1;
+    animation: recall-write 2.8s ease-in-out infinite both;
+  }
+  .recall-loading-loop { animation-delay: 0.2s; }
+  .recall-loading-leg { animation-delay: 0.4s; }
+  .recall-loading-highlight { animation: recall-highlight 2.8s ease-in-out infinite; }
+  .recall-loading-note { animation: recall-notes 2.8s ease-in-out infinite; }
 }
 
 @media (prefers-reduced-motion: reduce) {

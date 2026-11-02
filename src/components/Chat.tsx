@@ -1,19 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import katex from "katex";
 import { api, stream } from "@/lib/api";
-import type { ChatSummary, Source, StoredMessage } from "@/lib/types";
+import { isWeb, type ChatSummary, type Source, type StoredMessage, type WebSource } from "@/lib/types";
 import { docName, useFiles } from "@/lib/useFiles";
-import { LANGUAGES } from "@/lib/languages";
 import { useReveal } from "@/lib/useReveal";
 import { MicButton } from "./MicButton";
 import { Preview } from "./Preview";
 import { SpeakButton } from "./SpeakButton";
 import { Spinner } from "./Spinner";
 
-const LANG_KEY = "recall.answerLanguage";
-
-type Message = { role: "user" | "assistant"; text: string; sources?: Source[]; error?: string; live?: boolean };
+type Message = { role: "user" | "assistant"; text: string; sources?: Source[]; web?: WebSource[]; error?: string; live?: boolean };
 
 // Older saved citations have no `kind`; a missing page means a voice note.
 const where = (s: Source) => ((s.kind ?? (s.page === null ? "audio" : "doc")) === "audio" ? "voice note" : `p. ${s.page}`);
@@ -24,12 +22,19 @@ const ink = (n: number) => `hl-n${((n - 1) % 5) + 1}`;
 const CITE = /(\[\d+(?:,\s*\d+)*\])/g;
 const numbers = (cite: string) => cite.slice(1, -1).split(",").map((n) => Number(n.trim()));
 
-/** Renders the model's **bold** as bold (the only markdown it uses much); the rest stays plain text. */
+/** Render the emphasis and inline code commonly used in answers. */
 function Bold({ text }: { text: string }) {
   return (
     <>
-      {text.split(/(\*\*[^*\n]+\*\*)/g).map((s, i) =>
-        s.startsWith("**") && s.endsWith("**") && s.length > 4 ? <strong key={i}>{s.slice(2, -2)}</strong> : <span key={i}>{s}</span>,
+      {text.split(/(`[^`\n]+`|\$\$[^$]+\$\$|\$[^$\n]+\$|\*\*[^*\n]+\*\*|\*[^*\n]+\*)/g).map((s, i) =>
+        s.startsWith("**") && s.endsWith("**") && s.length > 4 ? <strong key={i}>{s.slice(2, -2)}</strong> :
+        s.startsWith("*") && s.endsWith("*") && s.length > 2 ? <em key={i}>{s.slice(1, -1)}</em> :
+        s.startsWith("`") && s.endsWith("`") && s.length > 2 ? <code key={i} className="rounded-sm bg-bg px-1 font-mono text-[0.9em]">{s.slice(1, -1)}</code> :
+        s.startsWith("$") && s.endsWith("$") ? <span key={i} dangerouslySetInnerHTML={{ __html: katex.renderToString(
+          s.slice(s.startsWith("$$") ? 2 : 1, s.startsWith("$$") ? -2 : -1),
+          { displayMode: s.startsWith("$$"), throwOnError: false, trust: false },
+        ) }} /> :
+        <span key={i}>{s}</span>,
       )}
     </>
   );
@@ -41,7 +46,8 @@ type Lit = { active: number | null; setActive: (n: number | null) => void };
  * Turns "[1]" and "[1, 3]" into highlighter-coloured numbers. The sentence just before a citation
  * is wrapped too, so lighting a source strokes every line it supports.
  */
-function Cited({ text, sources, onCite, active, setActive }: { text: string; sources: Source[]; onCite: (s: Source) => void } & Lit) {
+function Cited({ text, sources, onCite, active, setActive, citations = true }: { text: string; sources: Source[]; onCite: (s: Source) => void; citations?: boolean } & Lit) {
+  if (!citations) return <Bold text={text} />;
   const parts = text.split(CITE);
   return (
     <>
@@ -86,28 +92,57 @@ function Cited({ text, sources, onCite, active, setActive }: { text: string; sou
   );
 }
 
+export function AnswerText({ text, ...props }: { text: string; sources: Source[]; onCite: (s: Source) => void; citations?: boolean } & Lit) {
+  const lines = text.replace(/\$\$([\s\S]*?)\$\$/g, (_, math: string) => `$$${math.replace(/\n/g, " ")}$$`).split("\n");
+  const blocks: React.ReactNode[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    const bullet = line.match(/^(\s*)[-*]\s+(.+)$/);
+    const ordered = line.match(/^(\s*)\d+[.)]\s+(.+)$/);
+    if (bullet || ordered) {
+      const items: React.ReactNode[] = [];
+      const pattern = bullet ? /^(\s*)[-*]\s+(.+)$/ : /^(\s*)\d+[.)]\s+(.+)$/;
+      let match: RegExpMatchArray | null;
+      while (i < lines.length && (match = lines[i].match(pattern))) {
+        items.push(<li key={i} className={match[1].length >= 2 ? "ml-5" : ""}><Cited text={match[2]} {...props} /></li>);
+        i++;
+      }
+      i--;
+      const listClass = `space-y-1 pl-5 marker:text-muted ${bullet ? "list-disc" : "list-decimal"}`;
+      blocks.push(bullet ? <ul key={i} className={listClass}>{items}</ul> : <ol key={i} className={listClass}>{items}</ol>);
+    } else {
+      const heading = line.match(/^#{1,3}\s+(.+)$/);
+      blocks.push(heading ? <p key={i} className="font-bold"><Cited text={heading[1]} {...props} /></p> :
+        <p key={i} className="whitespace-pre-wrap"><Cited text={line} {...props} /></p>);
+    }
+  }
+  return <div className="max-w-[68ch] space-y-3 text-[0.97rem] leading-7 [&_.katex-display]:my-0">{blocks}</div>;
+}
+
 function Answer({ m, streaming, onCite }: { m: Message; streaming: boolean; onCite: (s: Source) => void }) {
   const shown = useReveal(m.text, !!m.live);
   const done = !streaming && shown.length === m.text.length;
   const [active, setActive] = useState<number | null>(null);
-  const sources = m.sources ?? [];
+  const cited = new Set((shown.match(CITE) ?? []).flatMap(numbers));
+  const sources = (m.sources ?? []).filter((source) => cited.has(source.n));
   return (
     <div className="grid gap-x-8 gap-y-4 md:grid-cols-[minmax(0,1fr)_13rem]">
       <div className="min-w-0">
-        <p className="max-w-[68ch] whitespace-pre-wrap text-[0.97rem] leading-7">
+        <div>
           {m.text ? (
-            <Cited text={shown} sources={sources} onCite={onCite} active={active} setActive={setActive} />
+            <AnswerText text={shown} sources={sources} onCite={onCite} active={active} setActive={setActive} />
           ) : (
             !m.error && <span className="inline-flex items-center gap-2 text-muted"><Spinner /> Thinking…</span>
           )}
-        </p>
+        </div>
         {m.error && <p role="alert" className="mt-2 text-sm font-medium text-danger">{m.error}</p>}
         {done && m.text && !m.error && <div className="mt-3"><SpeakButton text={m.text} /></div>}
       </div>
       {/* The margin: every source this answer used, in its highlighter colour. */}
-      {sources.length > 0 && (
+      {(sources.length > 0 || (m.web?.length ?? 0) > 0) && (
         <aside className="border-t border-danger/40 pt-3 md:border-t-0 md:border-l md:pt-0 md:pl-4" aria-label="Sources">
-          <p className="label mb-2">Sources</p>
+          {sources.length > 0 && <p className="label mb-2">Sources</p>}
           <ul className="flex flex-wrap gap-x-4 gap-y-2 md:block md:space-y-2">
             {sources.map((s) => (
               <li key={s.n}>
@@ -123,25 +158,59 @@ function Answer({ m, streaming, onCite }: { m: Message; streaming: boolean; onCi
               </li>
             ))}
           </ul>
+          {/* Web pages are never numbered or highlighted: they are background, not your document. */}
+          {(m.web?.length ?? 0) > 0 && (
+            <div className={sources.length > 0 ? "mt-4" : ""}>
+              <p className="label mb-2">From the web</p>
+              <ul className="space-y-1.5">
+                {m.web!.map((w) => (
+                  <li key={w.uri}>
+                    <a href={w.uri} target="_blank" rel="noopener noreferrer"
+                       className="text-sm leading-snug underline decoration-border underline-offset-4 hover:decoration-fg">
+                      {w.title}<span className="sr-only"> (opens in a new tab)</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </aside>
       )}
     </div>
   );
 }
 
-function History({ chats, chatId, busy, open }: { chats: ChatSummary[]; chatId: string | null; busy: boolean; open: (c: ChatSummary) => void }) {
+function History({ chats, chatId, busy, open, remove }: { chats: ChatSummary[]; chatId: string | null; busy: boolean; open: (c: ChatSummary) => void; remove: (id: string) => void }) {
+  const [confirming, setConfirming] = useState<string | null>(null);
   return (
     <ul className="max-h-[28rem] space-y-0.5 overflow-y-auto">
       {chats.map((c) => (
-        <li key={c.chat_id}>
+        <li key={c.chat_id} className="flex flex-wrap items-center">
           <button onClick={() => open(c)} disabled={busy}
-                  className={`w-full rounded-[3px] px-2 py-1.5 text-left text-sm transition hover:bg-surface ${
+                  className={`min-w-0 flex-1 rounded-[3px] px-2 py-1.5 text-left text-sm transition hover:bg-surface ${
                     c.chat_id === chatId ? "bg-surface font-semibold" : "text-muted"}`}>
             <span className="line-clamp-1">{c.title}</span>
             <span className="line-clamp-1 text-xs font-normal text-muted">
               {c.file_name ?? "All documents"} · {new Date(c.created_at).toLocaleDateString()}
             </span>
           </button>
+          <button disabled={busy} onClick={() => setConfirming(c.chat_id)} aria-label={`Delete chat: ${c.title}`}
+                  title="Delete chat" className="shrink-0 px-2 py-2 text-muted hover:text-danger">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"
+                 strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" />
+            </svg>
+          </button>
+          {confirming === c.chat_id && (
+            <div className="w-full space-y-2 px-2 py-2 text-sm">
+              <p className="text-danger">Delete this chat and all its messages? This cannot be undone.</p>
+              <div className="flex gap-2">
+                <button className="btn border-danger text-danger" disabled={busy}
+                        onClick={() => { setConfirming(null); remove(c.chat_id); }}>Yes, delete</button>
+                <button className="btn" disabled={busy} onClick={() => setConfirming(null)}>Cancel</button>
+              </div>
+            </div>
+          )}
         </li>
       ))}
       {chats.length === 0 && <li className="px-2 text-xs text-muted">No chats yet.</li>}
@@ -149,19 +218,13 @@ function History({ chats, chatId, busy, open }: { chats: ChatSummary[]; chatId: 
   );
 }
 
-export function Chat({ initialFileId, refreshKey }: { initialFileId: string | null; refreshKey: number }) {
+export function Chat({ initialFileId, refreshKey, canWeb }: { initialFileId: string | null; refreshKey: number; canWeb: boolean }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatId, setChatId] = useState<string | null>(null);
   const [fileId, setFileId] = useState<string | null>(initialFileId); // null = all documents
   const [mode, setMode] = useState<"explain" | "answer">("explain");
-  // "" = answer in the question's language. Remembered in this browser only (a convenience).
-  const [language, setLanguage] = useState<string>(() => {
-    try {
-      return localStorage.getItem(LANG_KEY) ?? "";
-    } catch {
-      return "";
-    }
-  });
+  const [web, setWeb] = useState(false); // let the tutor add Google Search background (Explain only)
+  const [historyOpen, setHistoryOpen] = useState(false); // the History popover below xl
   const docs = useFiles(refreshKey).filter((f) => f.status === "ready");
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [question, setQuestion] = useState("");
@@ -184,14 +247,40 @@ export function Chat({ initialFileId, refreshKey }: { initialFileId: string | nu
 
   async function open(c: ChatSummary) {
     if (busy) return;
+    setBusy(true);
     setError(null);
     try {
       const { messages: stored } = await api<{ messages: StoredMessage[] }>(`/api/v1/chats/${c.chat_id}/messages`);
-      setMessages(stored.map((s) => ({ role: s.role, text: s.content, sources: s.citations })));
+      setMessages(stored.map((s) => ({
+        role: s.role, text: s.content,
+        sources: s.citations.filter((c): c is Source => !isWeb(c)),
+        web: s.citations.filter(isWeb),
+      })));
       setChatId(c.chat_id);
       setFileId(c.file_id); // a chat stays on the document it started with
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(id: string) {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/api/v1/chats/${id}`, { method: "DELETE" });
+      setChats((cs) => cs.filter((c) => c.chat_id !== id));
+      if (chatId === id) {
+        setChatId(null);
+        setMessages([]);
+        setPreview(null);
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -209,7 +298,9 @@ export function Chat({ initialFileId, refreshKey }: { initialFileId: string | nu
     setMessages((ms) => [...ms, { role: "user", text: q }, { role: "assistant", text: "", live: true }]);
     try {
       // The document only matters when starting a chat; an existing chat keeps its own.
-      await stream("/api/v1/ask", { question: q, chat_id: chatId, file_id: chatId ? null : fileId, mode, language: language || null }, ({ event, data }) => {
+      await stream("/api/v1/ask", { question: q, chat_id: chatId, file_id: chatId ? null : fileId, mode, web_search: mode === "explain" && web && canWeb }, ({ event, data }) => {
+        if (event === "web") patchLast((m) => ({ ...m, web: data as WebSource[] }));
+        else
         if (event === "chat") setChatId((data as { chat_id: string }).chat_id);
         else if (event === "sources") patchLast((m) => ({ ...m, sources: data as Source[] }));
         else if (event === "token") patchLast((m) => ({ ...m, text: m.text + (data as string) }));
@@ -225,7 +316,7 @@ export function Chat({ initialFileId, refreshKey }: { initialFileId: string | nu
 
   const newChat = (
     <button className="btn w-full" disabled={busy || (!chatId && messages.length === 0)}
-            onClick={() => { setMessages([]); setChatId(null); setError(null); }}>
+            onClick={() => { setMessages([]); setChatId(null); setError(null); setHistoryOpen(false); }}>
       New chat
     </button>
   );
@@ -234,22 +325,31 @@ export function Chat({ initialFileId, refreshKey }: { initialFileId: string | nu
     <section className="grid gap-6 xl:grid-cols-[14rem_minmax(0,1fr)]">
       {/* Chapter band: the heading with the chosen document as its running head, ruled beneath. */}
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b-2 border-fg pb-3 xl:col-span-2">
-        <h1 className="chapter">Ask</h1>
-        <select value={fileId ?? ""} onChange={(e) => setFileId(e.target.value || null)}
-                disabled={busy || chatId !== null} aria-label="Document"
-                className="field w-auto max-w-full border-transparent bg-transparent text-right text-base font-bold sm:max-w-[22rem]">
-          <option value="">All documents</option>
-          {docs.map((d) => <option key={d.file_id} value={d.file_id}>{docName(d)}</option>)}
+        <div>
+          <h1 className="chapter">Ask</h1>
+          <p className="mt-2 max-w-[60ch] text-sm text-muted">Ask questions about your documents and explore explanations with sources.</p>
+        </div>
+        <select value={fileId ?? ""} onChange={(e) => {
+                  setFileId(e.target.value || null);
+                  setChatId(null);
+                  setMessages([]);
+                  setError(null);
+                  setPreview(null);
+                }}
+                disabled={busy} aria-label="Document"
+                className="field w-64 max-w-full border-transparent bg-surface text-right text-base font-bold text-fg sm:w-80">
+          <option value="" className="bg-surface text-fg">All documents</option>
+          {docs.map((d) => <option key={d.file_id} value={d.file_id} className="bg-surface text-fg">{docName(d)}</option>)}
         </select>
       </div>
       <aside className="hidden space-y-3 xl:block">
         {newChat}
         <h3 className="label px-2 pt-2">History</h3>
-        <History chats={chats} chatId={chatId} busy={busy} open={(c) => void open(c)} />
+        <History chats={chats} chatId={chatId} busy={busy} open={(c) => void open(c)} remove={(id) => void remove(id)} />
       </aside>
 
       <div className="flex min-w-0 flex-col gap-4">
-        {/* Answer style and language. */}
+        {/* Answer style. */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <div className="inline-flex gap-4" role="group" aria-label="Answer style">
             {(["explain", "answer"] as const).map((m) => (
@@ -260,23 +360,14 @@ export function Chat({ initialFileId, refreshKey }: { initialFileId: string | nu
               </button>
             ))}
           </div>
-          <select value={language} aria-label="Answer language" className="field w-auto"
-                  onChange={(e) => {
-                    setLanguage(e.target.value);
-                    try {
-                      localStorage.setItem(LANG_KEY, e.target.value);
-                    } catch {
-                      // private mode or blocked storage: the choice just isn't remembered
-                    }
-                  }}>
-            <option value="">Answer in: same as question</option>
-            {LANGUAGES.map((l) => <option key={l} value={l}>Answer in: {l}</option>)}
-          </select>
-          <details className="relative xl:hidden">
+          <details className="relative xl:hidden" open={historyOpen} onToggle={(e) => setHistoryOpen(e.currentTarget.open)}>
             <summary className="btn cursor-pointer list-none">History</summary>
             <div className="sheet absolute z-10 mt-1 w-72 space-y-2 p-2">
               {newChat}
-              <History chats={chats} chatId={chatId} busy={busy} open={(c) => void open(c)} />
+              {/* Picking or deleting a chat closes the popover, so the answer isn't hidden behind it. */}
+              <History chats={chats} chatId={chatId} busy={busy}
+                       open={(c) => { setHistoryOpen(false); void open(c); }}
+                       remove={(id) => { setHistoryOpen(false); void remove(id); }} />
             </div>
           </details>
         </div>
@@ -284,16 +375,33 @@ export function Chat({ initialFileId, refreshKey }: { initialFileId: string | nu
           {mode === "explain"
             ? "Explain: step by step in simple words, with examples, based on your document and citing its pages."
             : "Quick answer: only facts stated in your document, with page citations."}
-          {chatId && fileId && " This chat stays on its document; start a new chat to change it."}
+          {chatId && " Changing the document starts a new chat."}
         </p>
         {error && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
 
         <div className="sheet flex flex-col">
           <div className="divide-y divide-border">
             {messages.length === 0 && (
-              <p className="px-5 py-10 text-sm text-muted sm:px-8">
-                Ask a doubt below. Answers cite the page they come from; hover a number to see the line it supports.
-              </p>
+              <div className="ruled px-5 py-10 pl-[3.6rem] sm:px-8 sm:pl-[3.6rem]">
+                <p className="chapter !text-3xl sm:!text-4xl">What are you stuck on?</p>
+                <p className="mt-3 max-w-[52ch] text-sm leading-7 text-muted">
+                  Ask in any language. Every answer is printed from your own pages, and the numbers{" "}
+                  <sup><span className="hl hl-solid hl-n1 inline-block rounded-[2px] px-1 text-[0.95em] leading-[1.35] font-bold">1</span></sup>{" "}
+                  <sup><span className="hl hl-solid hl-n2 inline-block rounded-[2px] px-1 text-[0.95em] leading-[1.35] font-bold">2</span></sup>{" "}
+                  open the exact page they came from.
+                </p>
+                <p className="label mt-7">Try asking</p>
+                <ul className="mt-2">
+                  {["Explain the main idea of this chapter in simple words", "What are the key definitions I should memorise?", "Give me 5 questions to test myself on this"].map((q, i) => (
+                    <li key={q}>
+                      <button type="button" onClick={() => setQuestion(q)}
+                              className="py-1.5 text-left text-[0.97rem] font-semibold text-accent hover:text-fg">
+                        <span className={`hl hl-n${i + 1} box-decoration-clone`}>{q}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
             {messages.map((m, i) =>
               m.role === "user" ? (
@@ -320,6 +428,20 @@ export function Chat({ initialFileId, refreshKey }: { initialFileId: string | nu
                       placeholder={fileId ? "Ask a doubt about this document, in any language…" : "Ask a doubt about your documents, in any language…"}
                       className="field max-h-40 resize-none border-transparent text-[0.97rem] font-medium text-accent [field-sizing:content] focus:border-accent"
                       aria-label="Question" />
+            {/* Web search sits with the input it affects. Explain mode only: Quick answer is "only your document". */}
+            <button type="button" onClick={() => setWeb((w) => !w)} aria-pressed={canWeb && mode === "explain" && web}
+                    disabled={busy || mode !== "explain" || !canWeb}
+                    title={!canWeb ? "Web search is part of Pro"
+                      : mode !== "explain" ? "Web search works in Explain mode"
+                      : web ? "Web search is on: background from Google Search, only on your documents' subject"
+                            : "Add background from the web, only on your documents' subject"}
+                    className={`btn shrink-0 !px-2.5 ${canWeb && mode === "explain" && web ? "!border-accent bg-accent-soft text-accent" : "text-muted"}`}>
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"
+                   strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" />
+              </svg>
+              <span className="sr-only">Search the web</span>
+            </button>
             <MicButton disabled={busy} onText={(t) => setQuestion((q) => (q.trim() ? `${q.trim()} ${t}` : t))} />
             <button type="submit" disabled={busy || !question.trim()} className="btn-primary shrink-0">
               {busy ? <Spinner label="Answering" /> : "Ask"}

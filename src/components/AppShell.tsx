@@ -8,8 +8,10 @@ import { Agent } from "./Agent";
 import { useAuth } from "./AuthProvider";
 import { Chat } from "./Chat";
 import { Library } from "./Library";
+import { ProLock } from "./ProLock";
 import { QuizView } from "./QuizView";
 import { Talk } from "./Talk";
+import { Tasks } from "./Tasks";
 
 // Ask leads: it's where a study session happens; the rest feed it.
 const TABS = [
@@ -18,6 +20,7 @@ const TABS = [
   { id: "talk", label: "Talk" },
   { id: "quiz", label: "Quiz" },
   { id: "agent", label: "Agent" },
+  { id: "tasks", label: "Tasks" },
   { id: "account", label: "Account" },
 ] as const;
 type Tab = (typeof TABS)[number]["id"];
@@ -27,9 +30,8 @@ export function AppShell() {
   const [tab, setTab] = useState<Tab>("chat");
   const [me, setMe] = useState<Me | null>(null);
   const [visits, setVisits] = useState(0); // bumps on every tab switch, so pickers reload new uploads
-  // "Ask about this" / "Quiz me" from the Library: remount that screen with the document chosen.
-  // Each screen has its own counter, so opening one doesn't reset the other.
-  const [focus, setFocus] = useState({ chat: null as string | null, chatN: 0, quiz: null as string | null, quizN: 0 });
+  // Remount Ask when opening a document from the Library.
+  const [focus, setFocus] = useState({ chat: null as string | null, chatN: 0 });
 
   const refreshMe = useCallback(async () => {
     try {
@@ -50,19 +52,30 @@ export function AppShell() {
   function go(next: Tab) {
     setTab(next);
     setVisits((v) => v + 1);
+    void refreshMe(); // so a trial that just ended locks Pro screens on the next tab switch
   }
 
-  function openWith(next: "chat" | "quiz", fileId: string) {
-    setFocus((f) => (next === "chat" ? { ...f, chat: fileId, chatN: f.chatN + 1 } : { ...f, quiz: fileId, quizN: f.quizN + 1 }));
-    go(next);
+  // Starts the account's one free trial; the error (already used, offline) is shown by whoever asked.
+  async function startTrial() {
+    await api("/api/v1/billing/trial", { method: "POST", body: {} });
+    await refreshMe();
   }
 
+  function openWith(fileId: string) {
+    setFocus((f) => ({ chat: fileId, chatN: f.chatN + 1 }));
+    go("chat");
+  }
+
+  const trialing = me?.plan === "free" && !!me.trial?.active; // Pro access from the free trial
   const plan = me && (
-    <span className={`pill border ${me.plan === "pro" ? "border-fg text-fg" : "border-border text-muted"}`}>
-      {me.plan === "pro" ? "Pro" : "Free"}
+    <span className={`pill border ${me.plan !== "free" || trialing ? "border-fg text-fg" : "border-border text-muted"}`}>
+      {me.plan === "pro" ? "Pro" : me.plan === "ultra" ? "Ultra" : trialing ? "Trial" : "Free"}
     </span>
   );
   const current = TABS.find((t) => t.id === tab)!;
+  // False while the plan is still loading, so Pro users never see a lock flash. A running trial is Pro access.
+  const isFree = me?.plan === "free" && !trialing;
+  const onTrial = me?.trial?.available ? startTrial : undefined;
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[13rem_1fr]">
@@ -103,22 +116,29 @@ export function AppShell() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 pt-6 pb-28 sm:px-8 lg:pt-10 lg:pb-12">
-        {tab !== "chat" && <h1 className="chapter mb-6 lg:mb-8">{current.label}</h1>}
-        {/* Screens stay mounted so a running answer, quiz or agent run isn't lost when switching tabs. */}
+        {tab !== "chat" && <h1 className="chapter mb-6 lg:mb-8">{tab === "tasks" ? "My tasks" : current.label}</h1>}
+        {/* Screens stay mounted so a running answer or agent run isn't lost when switching tabs. */}
         <div hidden={tab !== "chat"}>
-          <Chat key={`chat-${focus.chatN}`} initialFileId={focus.chat} refreshKey={visits} />
+          <Chat key={`chat-${focus.chatN}`} initialFileId={focus.chat} refreshKey={visits} canWeb={!isFree} />
         </div>
-        <div hidden={tab !== "library"}><Library onOpen={openWith} /></div>
-        <div hidden={tab !== "quiz"}>
-          <QuizView key={`quiz-${focus.quizN}`} initialFileId={focus.quiz} refreshKey={visits} />
+        <div hidden={tab !== "library"}><Library onOpen={openWith} free={isFree} /></div>
+        <div hidden={tab !== "talk"}>
+          {isFree
+            ? <ProLock title="Talk it through" text="Speak with a voice tutor that answers from your documents, with captions and sources. Live voice is part of Pro." onUpgrade={() => go("account")} onTrial={onTrial} />
+            : <Talk refreshKey={visits} />}
         </div>
-        <div hidden={tab !== "talk"}><Talk refreshKey={visits} /></div>
-        <div hidden={tab !== "agent"}><Agent /></div>
-        <div hidden={tab !== "account"}><Account me={me} onPlanChange={refreshMe} /></div>
+        <div hidden={tab !== "quiz"}><QuizView initialFileId={null} refreshKey={visits} /></div>
+        <div hidden={tab !== "agent"}>
+          {isFree
+            ? <ProLock title="Hand it a goal" text="The Agent searches your material, works out the steps and asks before it saves anything for you. It is part of Pro." onUpgrade={() => go("account")} onTrial={onTrial} />
+            : <Agent />}
+        </div>
+        <div hidden={tab !== "tasks"}><Tasks refreshKey={visits} onAgent={() => go("agent")} /></div>
+        <div hidden={tab !== "account"}><Account me={me} onPlanChange={refreshMe} onTrial={startTrial} /></div>
       </main>
 
       <nav aria-label="Sections"
-           className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden">
+           className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-6 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden">
         {TABS.filter((t) => t.id !== "account").map((t) => (
           <button key={t.id} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}
                   className="flex justify-center py-3">

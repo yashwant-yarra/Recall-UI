@@ -105,25 +105,39 @@ export function Talk({ refreshKey }: { refreshKey: number }) {
   const mins = secondsLeft === null ? "" : `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
 
   return (
-    <section className="max-w-2xl space-y-5">
-      <div className="flex flex-wrap items-center gap-2">
-        <select value={fileId} onChange={(e) => setFileId(e.target.value)} disabled={status === "connecting" || live}
-                aria-label="Document" className="field w-auto max-w-xs">
-          <option value="">All documents</option>
-          {docs.map((d) => <option key={d.file_id} value={d.file_id}>{docName(d)}</option>)}
-        </select>
-        <select value={language} onChange={(e) => setLanguage(e.target.value)} disabled={status === "connecting" || live}
-                aria-label="Language" className="field w-auto">
-          <option value="">Speak: same as me</option>
-          {LANGUAGES.map((l) => <option key={l} value={l}>Speak: {l}</option>)}
-        </select>
+    <section className="max-w-4xl space-y-6">
+      <div className="border-b-2 border-fg pb-5">
+        <h2 className="text-lg font-bold">Talk through your material</h2>
+        <p className="mt-1 max-w-[62ch] text-sm leading-6 text-muted">
+          Ask questions out loud, work through a tricky idea, or check your understanding with your tutor.
+        </p>
       </div>
 
-      <div className="sheet flex flex-col items-center gap-4 px-6 py-10 text-center">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="min-w-0 space-y-1.5">
+          <span className="label">Study material</span>
+          <select value={fileId} onChange={(e) => setFileId(e.target.value)} disabled={status === "connecting" || live}
+                  className="field">
+            <option value="" className="bg-surface text-fg">All documents</option>
+            {docs.map((d) => <option key={d.file_id} value={d.file_id} className="bg-surface text-fg">{docName(d)}</option>)}
+          </select>
+        </label>
+        <label className="min-w-0 space-y-1.5">
+          <span className="label">Spoken language</span>
+          <select value={language} onChange={(e) => setLanguage(e.target.value)} disabled={status === "connecting" || live}
+                  className="field">
+            <option value="" className="bg-surface text-fg">Same as me</option>
+            {LANGUAGES.map((l) => <option key={l} value={l} className="bg-surface text-fg">{l}</option>)}
+          </select>
+        </label>
+      </div>
+
+      <div className="sheet flex flex-col items-center gap-4 px-6 py-10 text-center sm:py-12">
+        <p className="label">{live ? "Live conversation" : status === "connecting" ? "Getting ready" : "Your voice tutor"}</p>
         <button
           onClick={() => (live || status === "connecting" ? cleanup.current?.() : void start())}
-          aria-label={live ? "End conversation" : "Start talking"}
-          title={live ? "End conversation" : "Start talking"}
+          aria-label={live ? "End conversation" : status === "connecting" ? "Cancel connection" : "Start talking"}
+          title={live ? "End conversation" : status === "connecting" ? "Cancel connection" : "Start talking"}
           className={`flex h-24 w-24 items-center justify-center rounded-full transition ${
             live ? "bg-danger text-white" : "bg-ink text-ink-fg hover:opacity-85"
           } ${live && speaking ? "ring-[10px] ring-[var(--hl-1)]" : live ? "animate-pulse" : ""}`}
@@ -148,6 +162,27 @@ export function Talk({ refreshKey }: { refreshKey: number }) {
         {message && <p role="alert" className="text-sm text-danger">{message}</p>}
       </div>
 
+      {turns.length === 0 && !live && status !== "connecting" && (
+        <div className="sheet ruled grid gap-6 px-5 py-8 pl-[3.6rem] sm:grid-cols-2 sm:gap-10 sm:px-8 sm:pl-[3.6rem]">
+          <div>
+            <h3 className="label">Get started</h3>
+            <ol className="mt-3 space-y-2 text-sm leading-6">
+              <li><span className="hl hl-solid hl-n1 mr-2 px-1 font-bold">1</span>Choose a document or use your whole library.</li>
+              <li><span className="hl hl-solid hl-n2 mr-2 px-1 font-bold">2</span>Tap the microphone and allow access.</li>
+              <li><span className="hl hl-solid hl-n3 mr-2 px-1 font-bold">3</span>Ask your question naturally. You can interrupt the tutor.</li>
+            </ol>
+          </div>
+          <div>
+            <h3 className="label">Try asking</h3>
+            <ul className="mt-3 space-y-2 text-sm leading-6 font-semibold">
+              <li><span className="hl hl-n4 box-decoration-clone">“Explain the main idea in simple terms.”</span></li>
+              <li><span className="hl hl-n5 box-decoration-clone">“Give me an example of this concept.”</span></li>
+              <li><span className="hl hl-n1 box-decoration-clone">“Ask me a question to check my understanding.”</span></li>
+            </ul>
+          </div>
+        </div>
+      )}
+
       {sources.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
           <span className="label">Looked at:</span>
@@ -160,7 +195,9 @@ export function Talk({ refreshKey }: { refreshKey: number }) {
         </div>
       )}
 
-      {turns.length > 0 && (
+      {turns.length > 0 ? (
+        <div>
+        <h3 className="label mb-2">Conversation</h3>
         <ol className="sheet divide-y divide-border px-5 sm:px-8" aria-label="Conversation">
           {turns.map((t, i) => (
             <li key={i} className={t.role === "user"
@@ -170,6 +207,11 @@ export function Talk({ refreshKey }: { refreshKey: number }) {
             </li>
           ))}
         </ol>
+        </div>
+      ) : (live || status === "connecting") && (
+        <div className="border-t border-border pt-4 text-sm text-muted" role="status">
+          Conversation captions will appear here as you talk.
+        </div>
       )}
       {preview && <Preview fileId={preview.fileId} page={preview.page} onClose={() => setPreview(null)} />}
     </section>

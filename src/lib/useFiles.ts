@@ -19,7 +19,10 @@ export function useFiles(refreshKey: number): FileItem[] {
 
 const TYPE: Record<string, string> = {
   "application/pdf": "PDF",
+  "application/msword": "DOC",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+  "application/vnd.ms-powerpoint": "PPT",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": "PPTX",
   "text/plain": "TXT",
 };
 

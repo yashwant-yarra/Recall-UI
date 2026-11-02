@@ -9,7 +9,8 @@ type Page = { page: number | null; text: string };
 
 /**
  * Shows a file in a dialog: PDFs in the browser's PDF viewer (opened at `page` when given),
- * voice notes with a player and their transcript, DOCX/TXT as their extracted text.
+ * PowerPoint as converted PDF slides, voice notes with a player and their transcript,
+ * and other Office files as extracted text.
  * The file comes straight from Cloud Storage through a short-lived signed link.
  */
 export function Preview({ fileId, page, onClose }: { fileId: string; page?: number | null; onClose: () => void }) {
@@ -28,9 +29,10 @@ export function Preview({ fileId, page, onClose }: { fileId: string; page?: numb
       .then((f) => {
         if (!live) return;
         setFile(f);
-        // PDFs and plain text show the original; voice notes and Word files show extracted text.
-        if (f.kind === "audio" || f.mime_type.includes("wordprocessingml")) {
-          api<{ pages: Page[] }>(`/api/v1/files/${fileId}/text`).then((r) => live && setPages(r.pages)).catch(() => {});
+        // Only PDFs and plain text render directly; Office files and audio use extracted text.
+        if (!["application/pdf", "text/plain"].includes(f.mime_type)) {
+          api<{ pages: Page[] }>(`/api/v1/files/${fileId}/text`).then((r) => live && setPages(r.pages))
+            .catch((e: Error) => live && setError(e.message));
         }
       })
       .catch((e: Error) => live && setError(e.message === "File not found" ? "This file was deleted." : e.message));
@@ -40,6 +42,7 @@ export function Preview({ fileId, page, onClose }: { fileId: string; page?: numb
   }, [fileId]);
 
   const pdf = file?.mime_type === "application/pdf";
+  const office = file?.kind === "doc" && !["application/pdf", "text/plain"].includes(file.mime_type);
   return (
     <dialog
       ref={dialog}
@@ -73,10 +76,15 @@ export function Preview({ fileId, page, onClose }: { fileId: string; page?: numb
               {pages ? <p className="whitespace-pre-wrap text-sm leading-relaxed">{pages.map((p) => p.text).join("\n")}</p> : <Loading text="Loading transcript…" />}
             </div>
           )}
-          {file && file.mime_type.includes("wordprocessingml") && (
+          {file && office && (
             <div className="whitespace-pre-wrap p-4 text-sm leading-relaxed">
-              <p className="mb-3 text-xs text-muted">Word files can&apos;t be shown in the browser, so this is the text extracted from it.</p>
-              {pages ? pages.map((p) => p.text).join("\n\n") : <Loading text="Loading text…" />}
+              <p className="mb-3 text-xs text-muted">This preview shows the text extracted from your Office file.</p>
+              {pages ? pages.map((p) => (
+                <div key={p.page} className="mb-6">
+                  {p.page !== null && <p className="label mb-2">Page / slide {p.page}</p>}
+                  <p>{p.text}</p>
+                </div>
+              )) : <Loading text="Loading text…" />}
             </div>
           )}
         </div>

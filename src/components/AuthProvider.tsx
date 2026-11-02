@@ -2,8 +2,13 @@
 
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  GithubAuthProvider,
+  OAuthProvider,
   onAuthStateChanged,
+  sendEmailVerification,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   type User,
 } from "firebase/auth";
@@ -15,7 +20,11 @@ type AuthState = {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
+  signInWithProvider: (provider: "google" | "github" | "microsoft") => Promise<void>;
   logOut: () => Promise<void>;
+  sendVerification: () => Promise<void>;
+  /** Reload the user and force a fresh token, so email_verified is current on the next API call. */
+  refreshVerification: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -38,8 +47,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     signIn: async (email, password) => void (await signInWithEmailAndPassword(auth, email, password)),
-    signUp: async (email, password) => void (await createUserWithEmailAndPassword(auth, email, password)),
+    signUp: async (email, password) => {
+      const created = await createUserWithEmailAndPassword(auth, email, password);
+      // The free trial needs a verified email, so send the link right away. A failure here must not block sign-up.
+      await sendEmailVerification(created.user).catch(() => {});
+    },
+    signInWithProvider: async (provider) => void (await signInWithPopup(auth,
+      provider === "google" ? new GoogleAuthProvider() : provider === "github" ? new GithubAuthProvider() : new OAuthProvider("microsoft.com"))),
     logOut: () => signOut(auth),
+    sendVerification: async () => {
+      if (auth.currentUser) await sendEmailVerification(auth.currentUser);
+    },
+    refreshVerification: async () => {
+      await auth.currentUser?.reload();
+      await auth.currentUser?.getIdToken(true);
+    },
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

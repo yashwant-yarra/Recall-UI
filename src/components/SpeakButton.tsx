@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fetchAudio } from "@/lib/api";
+import { fetchAudio, streamAudio } from "@/lib/api";
 import { Spinner } from "./Spinner";
 
-// Generating speech takes about as long as playing it (~5 s per sentence). So: a short first piece
-// for a quick first sound, medium pieces after that, generated a few at a time ahead of playback.
-const FIRST_PIECE = 90; // characters; about one clause
+// Stream the first piece and generate later pieces ahead of playback.
+// Keeping adjacent sentences together avoids pauses between separately generated clips.
+const FIRST_PIECE = 300;
 const MAX_PIECE = 300; // the API accepts up to 600
 const AHEAD = 3; // pieces generated in parallel
 const CACHE_SIZE = 80; // clips kept in memory for replays
@@ -83,12 +83,6 @@ export function SpeakButton({ text }: { text: string }) {
 
   useEffect(() => () => stop.current?.(), []);
 
-  /** Start generating the first piece early (on hover/focus), so a click has less to wait for. */
-  function warmUp() {
-    const first = speechPieces(text)[0];
-    if (first) clip(first).catch(() => {});
-  }
-
   async function play() {
     stopCurrent?.();
     setError(null);
@@ -97,10 +91,13 @@ export function SpeakButton({ text }: { text: string }) {
     let stopped = false;
     let audio: HTMLAudioElement | null = null;
     let finish: (() => void) | null = null;
-    // Stop only stops playback. Requests already running finish and are cached, so playing
-    // again is instant instead of starting over.
+    const abort = new AbortController();
+    const context = !clipCache.has(pieces[0]) && typeof AudioContext !== "undefined" ? new AudioContext() : null;
+    if (context) void context.resume();
     const halt = () => {
       stopped = true;
+      abort.abort();
+      if (context && context.state !== "closed") void context.close();
       audio?.pause();
       finish?.();
       setState("idle");
@@ -113,6 +110,53 @@ export function SpeakButton({ text }: { text: string }) {
     };
     try {
       for (let i = 0; i < pieces.length; i++) {
+        if (i === 0 && context) {
+          const first = streamAudio(pieces[i], abort.signal);
+          prefetch(1);
+          const reader = (await first).getReader();
+          const pcm: Uint8Array[] = [];
+          let carry: number | null = null;
+          let next = context.currentTime + 0.2;
+          let last: AudioBufferSourceNode | null = null;
+          for (;;) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            const bytes: Uint8Array = new Uint8Array(value.length + (carry === null ? 0 : 1));
+            if (carry !== null) bytes[0] = carry;
+            bytes.set(value, carry === null ? 0 : 1);
+            carry = bytes.length % 2 ? bytes[bytes.length - 1] : null;
+            const even = bytes.subarray(0, bytes.length - (carry === null ? 0 : 1));
+            if (!even.length) continue;
+            pcm.push(even);
+            const buffer = context.createBuffer(1, even.length / 2, 24000);
+            const samples = buffer.getChannelData(0);
+            const view = new DataView(even.buffer, even.byteOffset, even.byteLength);
+            for (let n = 0; n < samples.length; n++) samples[n] = view.getInt16(n * 2, true) / 32768;
+            last = context.createBufferSource();
+            last.buffer = buffer;
+            last.connect(context.destination);
+            next = Math.max(next, context.currentTime + 0.005);
+            last.start(next);
+            next += buffer.duration;
+            setState("playing");
+          }
+          if (carry !== null || !last) throw new Error("Incomplete audio stream");
+          const length = pcm.reduce((sum, bytes) => sum + bytes.length, 0);
+          const header = new ArrayBuffer(44);
+          const view = new DataView(header);
+          for (const [offset, value] of [[0, "RIFF"], [8, "WAVE"], [12, "fmt "], [36, "data"]] as const)
+            for (let n = 0; n < value.length; n++) view.setUint8(offset + n, value.charCodeAt(n));
+          view.setUint32(4, 36 + length, true); view.setUint32(16, 16, true);
+          view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, 24000, true);
+          view.setUint32(28, 48000, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+          view.setUint32(40, length, true);
+          clipCache.set(pieces[i], Promise.resolve(new Blob([header, ...pcm as BlobPart[]], { type: "audio/wav" })));
+          while (clipCache.size > CACHE_SIZE) clipCache.delete(clipCache.keys().next().value!);
+          if (context.currentTime < next)
+            await new Promise<void>((resolve) => { finish = resolve; last!.onended = () => resolve(); });
+          if (stopped) return;
+          continue;
+        }
         prefetch(i);
         const blob = await clip(pieces[i]);
         if (stopped) return;
@@ -132,6 +176,7 @@ export function SpeakButton({ text }: { text: string }) {
     } catch (e) {
       if (!stopped) setError((e as Error).message);
     } finally {
+      if (context && context.state !== "closed") void context.close();
       if (stopCurrent === halt) stopCurrent = null;
       if (!stopped) setState("idle");
     }
@@ -144,8 +189,6 @@ export function SpeakButton({ text }: { text: string }) {
       <button
         type="button"
         onClick={() => (state === "idle" ? void play() : stop.current?.())}
-        onPointerEnter={state === "idle" ? warmUp : undefined}
-        onFocus={state === "idle" ? warmUp : undefined}
         aria-label={label}
         title={label}
         aria-pressed={state !== "idle"}

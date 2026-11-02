@@ -130,6 +130,18 @@ export function QuizView({ initialFileId, refreshKey }: { initialFileId: string 
 
         {error && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
 
+        {!quiz && (
+          <div className="sheet ruled px-5 py-10 pl-[3.6rem] sm:px-8 sm:pl-[3.6rem]">
+            <p className="chapter !text-3xl sm:!text-4xl">Test yourself</p>
+            <p className="mt-3 max-w-[52ch] text-sm leading-7 text-muted">Pick a document above and Recall writes questions from its pages.</p>
+            <ol className="mt-6 space-y-2 text-[0.97rem] font-semibold">
+              <li><span className="hl hl-solid hl-n1 px-1">1</span> Answer without peeking. Correct answers stay hidden.</li>
+              <li><span className="hl hl-solid hl-n2 px-1">2</span> Get graded, and see the right answer in green.</li>
+              <li><span className="hl hl-solid hl-n3 px-1">3</span> Read the page it came from, then try again.</li>
+            </ol>
+          </div>
+        )}
+
         {quiz && (
           <div className="sheet px-5 py-6 sm:px-8">
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
