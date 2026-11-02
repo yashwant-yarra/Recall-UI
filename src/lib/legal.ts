@@ -9,6 +9,7 @@ export const BUSINESS = {
 
 // Price of one 30-day pass in INR. Keep in step with PRO_PRICE_INR / ULTRA_PRICE_INR in the backend config.
 export const PRICES = { pro: 699, ultra: 1999 } as const;
+export const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
 // Weekly limits per plan, mirroring the backend defaults in config.py. ponytail: copied by hand; if the
 // backend limits change, update here (the Account page reads the live values from the API).

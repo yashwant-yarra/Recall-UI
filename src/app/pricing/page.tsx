@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/LegalPage";
-import { PLAN_LIMITS, PRICES, TRIAL_DAYS } from "@/lib/legal";
+import { inr, PLAN_LIMITS, PRICES, TRIAL_DAYS } from "@/lib/legal";
 
 export const metadata: Metadata = { title: "Pricing · Recall", description: "Recall plans: Free, Pro and Ultra, billed monthly in INR." };
 
-const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
 export default function Pricing() {
   return (
