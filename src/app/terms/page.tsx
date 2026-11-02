@@ -29,13 +29,13 @@ export default function Terms() {
       </ul>
       <p>We may suspend or close accounts that break these rules.</p>
 
-      <h2>Plans, payments and renewal</h2>
+      <h2>Plans and payments</h2>
       <ul>
-        <li>Recall has a Free plan and two paid plans, Pro (₹{PRICES.pro} per month) and Ultra (₹{PRICES.ultra} per month). Prices are in Indian Rupees and shown on the <Link href="/pricing">pricing page</Link>.</li>
-        <li>Paid plans renew automatically every month until cancelled. Payments are handled by Razorpay; we never see or store your card details.</li>
-        <li>The Pro trial lasts {TRIAL_DAYS} days. When it ends you return to Free unless you subscribe.</li>
-        <li>Weekly limits apply to every plan and are shown on the pricing page. We may change limits and prices for future billing periods; we will tell you before a price change affects your next charge.</li>
-        <li>Cancellation and refunds are covered in the <Link href="/refund">refund and cancellation policy</Link>.</li>
+        <li>Recall has a Free plan and two paid plans, Pro (₹{PRICES.pro} for 30 days) and Ultra (₹{PRICES.ultra} for 30 days). Prices are in Indian Rupees and shown on the <Link href="/pricing">pricing page</Link>.</li>
+        <li>Paid plans are one-time 30-day passes. They do not renew automatically; you buy another pass if you want to continue. Payments are handled by Cashfree; we never see or store your card or UPI details.</li>
+        <li>The Pro trial lasts {TRIAL_DAYS} days. When it ends you return to Free unless you buy a pass.</li>
+        <li>Weekly limits apply to every plan and are shown on the pricing page. We may change limits and prices for future passes; a pass you have already bought keeps the price you paid.</li>
+        <li>Refunds are covered in the <Link href="/refund">refund policy</Link>.</li>
       </ul>
 
       <h2>Deleting your data</h2>

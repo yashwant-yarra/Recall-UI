@@ -9,9 +9,9 @@ const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
 export default function Pricing() {
   return (
-    <LegalPage title="Pricing" intro="Start free. Upgrade when you need higher weekly limits. All prices are in Indian Rupees (INR), billed monthly, and you can cancel any time.">
+    <LegalPage title="Pricing" intro="Start free. Buy a 30-day pass when you need higher weekly limits. All prices are in Indian Rupees (INR). Nothing renews or charges you automatically.">
       <div className="grid gap-3 sm:grid-cols-3">
-        {([["Free", "₹0", "per month", "Try Recall with small weekly limits."], ["Pro", inr(PRICES.pro), "per month", "For regular study. Includes live voice tutor, agent and web-search answers."], ["Ultra", inr(PRICES.ultra), "per month", "For heavy use, with the highest weekly limits."]] as const).map(([name, price, per, blurb]) => (
+        {([["Free", "₹0", "forever", "Try Recall with small weekly limits."], ["Pro", inr(PRICES.pro), "per 30 days", "For regular study. Includes live voice tutor, agent and web-search answers."], ["Ultra", inr(PRICES.ultra), "per 30 days", "For heavy use, with the highest weekly limits."]] as const).map(([name, price, per, blurb]) => (
           <div key={name} className="card p-4">
             <p className="label">{name}</p>
             <p className="mt-2 text-3xl font-extrabold">{price}</p>
@@ -49,10 +49,10 @@ export default function Pricing() {
 
       <h2>How billing works</h2>
       <ul>
-        <li>Pro is {inr(PRICES.pro)} per month and Ultra is {inr(PRICES.ultra)} per month, charged automatically each month through Razorpay until you cancel.</li>
+        <li>Pro is {inr(PRICES.pro)} and Ultra is {inr(PRICES.ultra)} for 30 days, paid once through Cashfree (UPI, cards or net banking).</li>
         <li>Every account can try Pro free for {TRIAL_DAYS} days, once, with no card needed.</li>
-        <li>Cancel from your Account page at any time. You keep your paid plan until the end of the period you already paid for.</li>
-        <li>See the <Link href="/refund">refund and cancellation policy</Link> for details.</li>
+        <li>A pass is never renewed or charged again automatically. When it ends you move to Free, and you can buy another pass at any time. Buying before it ends adds 30 days to the time you have left.</li>
+        <li>See the <Link href="/refund">refund policy</Link> for details.</li>
       </ul>
     </LegalPage>
   );

@@ -1,4 +1,4 @@
-// Business details shown on the policy pages. Razorpay checks these during activation, so fill every
+// Business details shown on the policy pages. The payment provider checks these during activation, so fill every
 // bracketed value with the real one before submitting the site for review.
 export const BUSINESS = {
   product: "Recall",
@@ -7,7 +7,7 @@ export const BUSINESS = {
   updated: "2 November 2026",
 };
 
-// Plan prices in INR per month. Keep in step with the Razorpay plans.
+// Price of one 30-day pass in INR. Keep in step with PRO_PRICE_INR / ULTRA_PRICE_INR in the backend config.
 export const PRICES = { pro: 699, ultra: 1999 } as const;
 
 // Weekly limits per plan, mirroring the backend defaults in config.py. ponytail: copied by hand; if the

@@ -7,31 +7,29 @@ export const metadata: Metadata = { title: "Refund & Cancellation · Recall" };
 
 export default function Refund() {
   return (
-    <LegalPage title="Refund & Cancellation Policy" intro="How to cancel a Recall subscription, and when you can get your money back.">
+    <LegalPage title="Refund & Cancellation Policy" intro="How Recall passes end, and when you can get your money back.">
       <h2>Cancelling</h2>
       <ul>
-        <li>You can cancel Pro or Ultra at any time from the Account page. No call or email is needed.</li>
-        <li>Cancelling stops future charges. You keep your paid plan until the end of the month you already paid for, then move to Free.</li>
-        <li>Cancelling does not delete your documents or data. You can also delete those yourself from the Account page.</li>
+        <li>Pro and Ultra are one-time 30-day passes. They never renew or charge you again, so there is nothing to cancel: a pass simply ends after 30 days and you move to Free.</li>
+        <li>When a pass ends, your documents and data stay. You can delete them yourself from the Account page at any time.</li>
         <li>The free Pro trial ({TRIAL_DAYS} days) needs no card and ends on its own.</li>
       </ul>
 
       <h2>Refunds</h2>
       <ul>
-        <li><strong>First payment:</strong> if you are not satisfied, ask for a refund within 7 days of your first payment on a plan and we will refund it in full.</li>
-        <li><strong>Renewals:</strong> if you were charged for a renewal after you meant to cancel, tell us within 7 days of the charge and we will refund it in full.</li>
+        <li><strong>First pass:</strong> if you are not satisfied, ask for a refund within 7 days of buying your first pass on a plan and we will refund it in full.</li>
         <li><strong>Double or wrong charges:</strong> refunded in full once confirmed.</li>
-        <li><strong>Other cases:</strong> payments are otherwise non-refundable, and we do not refund part of a month already used.</li>
+        <li><strong>Other cases:</strong> passes are otherwise non-refundable, and we do not refund the unused part of a pass.</li>
       </ul>
 
       <h2>Upgrading</h2>
-      <p>When you move from Pro to Ultra, your Pro subscription is cancelled and Ultra starts. If anything about the switch looks wrong on your statement, <Link href="/contact">contact us</Link> and we will fix it.</p>
+      <p>When you buy Ultra while a Pro pass is running, the days left on Pro become Ultra days, and the new 30 days are added on top. If anything about the switch looks wrong, <Link href="/contact">contact us</Link> and we will fix it.</p>
 
       <h2>How to ask for a refund</h2>
       <p><Link href="/contact">Contact us</Link> from the email on your account, with the date and amount of the payment. We reply within 2 business days.</p>
 
       <h2>When you get the money</h2>
-      <p>Approved refunds go back to the original payment method through Razorpay. Banks usually take 5 to 7 business days to show it.</p>
+      <p>Approved refunds go back to the original payment method through Cashfree. Banks usually take 5 to 7 business days to show it.</p>
     </LegalPage>
   );
 }

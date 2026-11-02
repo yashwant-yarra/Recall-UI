@@ -14,46 +14,27 @@ const PAYMENTS_ON = process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === "true";
 
 export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanChange: () => Promise<void>; onTrial: () => Promise<void> }) {
   const { user } = useAuth();
-  const [state, setState] = useState<"idle" | "opening" | "waiting" | "confirming" | "cancelling">("idle");
+  const [state, setState] = useState<"idle" | "opening" | "waiting">("idle");
   const [error, setError] = useState<string | null>(null);
   const poll = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => () => { if (poll.current) clearInterval(poll.current); }, []);
   const [buying, setBuying] = useState<Tier | null>(null); // the tier whose checkout is open or being waited for
-  // Once the webhook has given the user the tier they bought, stop waiting.
+  // paid_until when checkout opened. A paid link always moves it (a first pass or 30 more days), so a
+  // change means the webhook has landed, for new passes and extensions alike.
+  const paidUntilAtStart = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    if (buying && me?.plan === buying && poll.current) {
+    if (buying && me && me.paid_until !== paidUntilAtStart.current && poll.current) {
       clearInterval(poll.current);
       poll.current = null;
       setState("idle");
       setBuying(null);
     }
-  }, [me?.plan, buying]);
-
-  // A paying user's renewal can be switched off; they keep their tier until the paid month ends.
-  const [ending, setEnding] = useState<{ endsAt: number | null } | null>(null);
-  const isPaid = !!me && me.plan !== "free";
-  useEffect(() => {
-    if (!isPaid) return;
-    let live = true;
-    api<{ cancel_scheduled: boolean; ends_at: number | null }>("/api/v1/billing/subscription")
-      .then((s) => live && setEnding(s.cancel_scheduled ? { endsAt: s.ends_at } : null))
-      .catch(() => {}); // the Switch to Free button just stays available
-    return () => { live = false; };
-  }, [isPaid]);
-
-  async function downgrade() {
-    setError(null);
-    setState("cancelling");
-    try {
-      const s = await api<{ ends_at: number | null }>("/api/v1/billing/cancel", { method: "POST", body: {} });
-      setEnding({ endsAt: s.ends_at });
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setState("idle");
-    }
-  }
+  }, [me, buying]);
+  // Cashfree needs a mobile number for every payment link. Accepts +91, spaces or a leading 0.
+  const [phone, setPhone] = useState("");
+  const digits = phone.replace(/\D/g, "").replace(/^(91|0)(?=\d{10}$)/, "");
+  const phoneOk = /^[6-9]\d{9}$/.test(digits);
   const [wiping, setWiping] = useState<"idle" | "confirming" | "deleting">("idle");
   const [confirmText, setConfirmText] = useState("");
   const [wipeError, setWipeError] = useState<string | null>(null);
@@ -108,19 +89,20 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
     }
   }
   const trialEnds = me?.trial?.ends_at ? new Date(me.trial.ends_at).toLocaleDateString(undefined, { dateStyle: "long" }) : null;
-  const endDate = ending?.endsAt ? new Date(ending.endsAt * 1000).toLocaleDateString(undefined, { dateStyle: "long" }) : null;
+  const paidUntil = me?.paid_until ? new Date(me.paid_until).toLocaleDateString(undefined, { dateStyle: "long" }) : null;
 
   async function upgrade(tier: Tier) {
     setError(null);
     setBuying(tier);
     setState("opening");
+    paidUntilAtStart.current = me?.paid_until ?? null;
     // Open the tab now, inside the click: browsers block popups opened later, after an await.
     const tab = window.open("", "_blank");
     try {
-      const { url } = await api<{ url: string }>("/api/v1/billing/checkout", { method: "POST", body: { tier } });
+      const { url } = await api<{ url: string }>("/api/v1/billing/checkout", { method: "POST", body: { tier, phone: digits } });
       if (tab) tab.location.href = url;
       else window.location.href = url;
-      // The plan changes only when Razorpay's webhook arrives, so check every few seconds (up to 5 min).
+      // The pass is granted only when Cashfree's webhook arrives, so check every few seconds (up to 5 min).
       setState("waiting");
       let tries = 0;
       poll.current = setInterval(() => {
@@ -135,16 +117,14 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
     }
   }
 
-  const paid = isPaid;
+  const paid = !!me && me.plan !== "free";
   const trialing = me?.plan === "free" && !!me.trial?.active;
   const planName = me ? (paid ? TIER_NAME[me.plan] : trialing ? "Trial" : "Free") : null;
   const busy = state === "opening" || state === "waiting";
   // The column that is yours is highlighted; during the trial that is Pro, the tier it gives.
   const mine = me ? (paid ? me.plan : trialing ? "pro" : "free") : null;
-  const canSwitch = paid && !ending; // can still stop renewing (not already scheduled to end)
-  const confirming = canSwitch && state === "confirming";
   const buyLabel = (tier: Tier, text: string) =>
-    buying === tier && state === "opening" ? <><Spinner /> Opening Razorpay…</> : buying === tier && state === "waiting" ? <><Spinner /> Waiting for payment…</> : text;
+    buying === tier && state === "opening" ? <><Spinner /> Opening Cashfree…</> : buying === tier && state === "waiting" ? <><Spinner /> Waiting for payment…</> : text;
   return (
     <section className="max-w-4xl space-y-6">
       <p className="max-w-[65ch] text-sm text-muted">Your account details and plan, all in one place.</p>
@@ -223,43 +203,39 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
         {!paid && me && me.trial && !me.trial.active && !me.trial.available && me.trial.ends_at && (
           <p className="mt-5 text-sm text-muted">Your free trial ended on {trialEnds}.</p>
         )}
-        {/* One row of plan actions: Free can buy either tier, Pro can move up to Ultra, and anyone paying can
-            switch back to Free. The "are you sure" prompt opens on its own line below. */}
+        {paid && (
+          <p className="mt-5 text-sm">
+            <span className="hl hl-solid hl-n1 px-1 font-semibold">{planName} until {paidUntil}</span>
+            <span className="text-muted"> Paid passes don’t renew. Buy again any time to add 30 days.</span>
+          </p>
+        )}
         {!PAYMENTS_ON && me && !paid && (
           <p className="mt-5 text-sm text-muted">Paid plans are coming soon.</p>
         )}
-        {me && ((PAYMENTS_ON && me.plan !== "ultra") || (canSwitch && !confirming)) && (
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            {PAYMENTS_ON && me.plan === "free" && (
-              <button onClick={() => void upgrade("pro")} disabled={busy} className="btn-primary">{buyLabel("pro", "Get Pro")}</button>
+        {/* Plan actions: Free can buy either tier, Pro can extend or move up to Ultra, Ultra can extend.
+            Each purchase is a 30-day pass; nothing is charged again automatically. */}
+        {PAYMENTS_ON && me && (
+          <div className="mt-5 flex flex-wrap items-end gap-2">
+            <label className="block">
+              <span className="label">Mobile number</span>
+              <input type="tel" inputMode="numeric" autoComplete="tel-national" value={phone}
+                     onChange={(e) => setPhone(e.target.value)} disabled={busy} placeholder="98765 43210"
+                     aria-describedby="phone-help" className="field mt-1 w-44" />
+            </label>
+            {me.plan === "free" && (
+              <button onClick={() => void upgrade("pro")} disabled={busy || !phoneOk} className="btn-primary">{buyLabel("pro", "Get Pro")}</button>
             )}
-            {PAYMENTS_ON && me.plan !== "ultra" && (
-              <button onClick={() => void upgrade("ultra")} disabled={busy} className={me.plan === "free" ? "btn" : "btn-primary"}>
-                {buyLabel("ultra", me.plan === "pro" ? "Upgrade to Ultra" : "Get Ultra")}
-              </button>
+            {me.plan === "pro" && (
+              <button onClick={() => void upgrade("pro")} disabled={busy || !phoneOk} className="btn">{buyLabel("pro", "Add 30 days of Pro")}</button>
             )}
-            {canSwitch && !confirming && (
-              <button onClick={() => setState("confirming")} disabled={state === "cancelling"} className="btn">
-                {state === "cancelling" ? <><Spinner /> Cancelling…</> : "Switch to Free"}
-              </button>
-            )}
-          </div>
-        )}
-        {paid && ending && (
-          <p className="mt-5 text-sm">
-            <span className="hl hl-solid hl-n4 px-1 font-semibold">{planName} until {endDate ?? "the end of this billing month"}</span>
-            <span className="text-muted"> It will not renew, and you move to Free after that.</span>
-          </p>
-        )}
-        {confirming && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-            <span>Stop renewing? You keep {planName} until the end of the month you paid for.</span>
-            <button className="btn border-danger text-danger hover:border-danger" onClick={() => void downgrade()}>Yes, switch to Free</button>
-            <button className="btn" onClick={() => setState("idle")}>Keep {planName}</button>
+            <button onClick={() => void upgrade("ultra")} disabled={busy || !phoneOk} className={me.plan === "pro" ? "btn-primary" : "btn"}>
+              {buyLabel("ultra", me.plan === "pro" ? "Upgrade to Ultra" : me.plan === "ultra" ? "Add 30 days of Ultra" : "Get Ultra")}
+            </button>
+            <p id="phone-help" className="w-full text-xs text-muted">The payment provider needs a 10-digit Indian mobile number for the receipt.</p>
           </div>
         )}
         {state === "waiting" && (
-          <p className="mt-2 text-xs text-muted">Finish paying in the Razorpay tab. This page updates by itself once the payment is confirmed.</p>
+          <p className="mt-2 text-xs text-muted">Finish paying in the Cashfree tab. This page updates by itself once the payment is confirmed.</p>
         )}
         {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
       </div>

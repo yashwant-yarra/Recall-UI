@@ -13,7 +13,7 @@ export default function Privacy() {
         <li><strong>Account details:</strong> your email address and, if you sign in with Google, GitHub or Microsoft, the basic profile that provider shares.</li>
         <li><strong>Your content:</strong> documents you upload, voice notes and voice you speak to the tutor, your questions and chats, quizzes, and tasks and drafts the agent prepares.</li>
         <li><strong>Usage:</strong> how many uploads, questions and other actions you use each day, to enforce plan limits.</li>
-        <li><strong>Billing:</strong> your plan, subscription status and Razorpay subscription ID. Your card or UPI details go straight to Razorpay; we never receive or store them.</li>
+        <li><strong>Billing:</strong> your plan, when your pass ends, the payment link ID, and the mobile number you give at checkout (passed to Cashfree, which requires it). Your card or UPI details go straight to Cashfree; we never receive or store them.</li>
       </ul>
 
       <h2>How we use it</h2>
@@ -25,7 +25,7 @@ export default function Privacy() {
         <li><strong>Google Cloud:</strong> stores your files and runs the service. Our servers are in Singapore (asia-southeast1).</li>
         <li><strong>Neon:</strong> the database holding your account data, chats and the searchable index of your material.</li>
         <li><strong>Google Vertex AI (Gemini):</strong> your questions and the matching passages of your material are sent to the AI model to produce answers, quizzes and speech. They are used to answer you, not to advertise to you.</li>
-        <li><strong>Razorpay:</strong> payments and subscriptions.</li>
+        <li><strong>Cashfree Payments:</strong> payments.</li>
       </ul>
       <p>Each of these providers has its own privacy terms. We share only what each needs to do its job.</p>
 
