@@ -28,3 +28,9 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  # Shows the buy buttons on the Account page. Turn on only while the API uses production Cashfree keys.
+  - variable: NEXT_PUBLIC_PAYMENTS_ENABLED
+    value: "true"
+    availability:
+      - BUILD
+      - RUNTIME
