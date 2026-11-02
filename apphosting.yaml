@@ -1,0 +1,30 @@
+# Firebase App Hosting settings. The NEXT_PUBLIC_ values are public by design (they are inlined into the
+# browser bundle), so they are safe to commit. Nothing secret belongs in this file.
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0 # scale to zero: no cost while nobody is using the site
+  maxInstances: 2 # a cap on cost if traffic spikes; raise it when real traffic needs it
+  concurrency: 80
+
+env:
+  - variable: NEXT_PUBLIC_API_URL
+    value: https://recall-api-jlr2qo4qaa-as.a.run.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyB_-wZjZpiqzNzduCCm9rEgPF_EG1VTXus
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: genai-511308.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: genai-511308
+    availability:
+      - BUILD
+      - RUNTIME
