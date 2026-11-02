@@ -116,7 +116,7 @@ export function Tasks({ refreshKey, onAgent }: { refreshKey: number; onAgent: ()
                        className="mt-1 h-4 w-4 shrink-0 cursor-pointer" />
                 <div className="min-w-0 flex-1">
                   <p className={`font-semibold ${t.done ? "text-muted line-through decoration-1" : ""}`}>{t.title}</p>
-                  <p className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-muted">
+                  <p className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-muted [overflow-wrap:anywhere]">
                     {t.due && (
                       <span className={isOverdue(t) ? "font-semibold text-danger" : ""}>
                         {isOverdue(t) ? "Overdue, " : "Due "}

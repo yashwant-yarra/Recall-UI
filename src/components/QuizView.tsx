@@ -145,7 +145,7 @@ export function QuizView({ initialFileId, refreshKey }: { initialFileId: string 
         {quiz && (
           <div className="sheet px-5 py-6 sm:px-8">
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
-              <h2 className="text-lg font-bold">
+              <h2 className="min-w-0 text-lg font-bold [overflow-wrap:anywhere]">
                 {quiz.file_name ?? "Quiz"}{quiz.topic ? ` · ${quiz.topic}` : ""}
               </h2>
               {grade && (

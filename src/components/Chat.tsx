@@ -170,7 +170,7 @@ function Answer({ m, streaming, onCite }: { m: Message; streaming: boolean; onCi
                 <button type="button" onClick={() => onCite(s)} title="Open the source"
                         onMouseEnter={() => setActive(s.n)} onMouseLeave={() => setActive(null)}
                         onFocus={() => setActive(s.n)} onBlur={() => setActive(null)}
-                        className={`text-left text-sm leading-snug transition-opacity ${
+                        className={`text-left text-sm leading-snug transition-opacity [overflow-wrap:anywhere] ${
                           active !== null && active !== s.n ? "opacity-40" : ""}`}>
                   <span className={`hl ${ink(s.n)} box-decoration-clone px-0.5`} data-on={active === s.n}>
                     <b className="mr-1">{s.n}</b>{label(s)}

@@ -132,7 +132,7 @@ export function Library({ onOpen, free }: { onOpen: (fileId: string) => void; fr
               <StatusMark status={f.status} />
               <div className="min-w-0">
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <span className={`font-bold ${f.status === "failed" ? "struck" : ""}`}>
+                  <span className={`min-w-0 font-bold [overflow-wrap:anywhere] ${f.status === "failed" ? "struck" : ""}`}>
                     {f.name ?? (f.kind === "audio" ? "Voice note" : (TYPE_LABEL[f.mime_type] ?? "Document"))}
                   </span>
                   <span className="text-sm text-muted">

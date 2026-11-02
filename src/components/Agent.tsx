@@ -66,7 +66,7 @@ function WriteArgs({ tool, args, fileNames }: { tool: string; args: Record<strin
     <div className="mt-2">
       <p className="text-base font-bold">{title}</p>
       {(due || file) && (
-        <p className="mt-1 flex flex-wrap gap-x-4 text-sm text-muted">
+        <p className="mt-1 flex flex-wrap gap-x-4 text-sm text-muted [overflow-wrap:anywhere]">
           {due && <span>Due {due}</span>}
           {file && <span>From {file}</span>}
         </p>

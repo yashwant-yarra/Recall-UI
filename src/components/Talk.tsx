@@ -188,7 +188,7 @@ export function Talk({ refreshKey }: { refreshKey: number }) {
           <span className="label">Looked at:</span>
           {sources.map((s, i) => (
             <button key={i} type="button" onClick={() => setPreview({ fileId: s.file_id, page: s.page })}
-                    title="Open the source" className={`hl hl-n${(i % 5) + 1} font-semibold hover:[background-size:100%_82%,100%_0.3em]`}>
+                    title="Open the source" className={`hl hl-n${(i % 5) + 1} min-w-0 text-left font-semibold [overflow-wrap:anywhere] hover:[background-size:100%_82%,100%_0.3em]`}>
               {s.name ?? "Document"}{s.kind === "audio" ? " · voice note" : s.page ? ` · p. ${s.page}` : ""}
             </button>
           ))}
