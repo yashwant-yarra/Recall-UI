@@ -3,6 +3,7 @@
 import { FirebaseError } from "firebase/app";
 import { useState } from "react";
 import { useAuth } from "./AuthProvider";
+import { LegalLinks } from "./LegalLinks";
 import { Spinner } from "./Spinner";
 
 const MESSAGES: Record<string, string> = {
@@ -76,6 +77,7 @@ export function Login() {
   }
 
   return (
+    <>
     <main className="min-h-screen px-4 py-8 sm:px-8 lg:flex lg:items-center lg:py-12">
       <div className="mx-auto grid w-full max-w-xl gap-10 lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-center lg:gap-20">
         <section className="min-w-0">
@@ -157,5 +159,9 @@ export function Login() {
         </section>
       </div>
     </main>
+    <div className="px-4 pb-8 sm:px-8">
+      <LegalLinks className="mx-auto max-w-xl lg:max-w-6xl" />
+    </div>
+    </>
   );
 }
