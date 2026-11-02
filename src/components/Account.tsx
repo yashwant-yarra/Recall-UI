@@ -239,7 +239,9 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
         {PAYMENTS_ON && me && (
           <div className="mt-6 border-t border-border pt-5">
             <label htmlFor="phone" className="label block">Mobile number</label>
-            <div className="relative mt-2 w-full max-w-xs">
+            {/* The number and the buy buttons share a row; on narrow screens the buttons wrap below it. */}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="relative w-full sm:w-64">
               <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted">+91</span>
               <input id="phone" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={16}
                      value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^\d\s+-]/g, ""))}
@@ -247,10 +249,6 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
                      aria-invalid={showPhoneProblem} aria-describedby="phone-help"
                      className={`field pl-12 ${showPhoneProblem ? "border-danger focus:border-danger focus:ring-danger/20" : ""}`} />
             </div>
-            <p id="phone-help" aria-live="polite" className={`mt-2 text-xs ${showPhoneProblem ? "text-danger" : "text-muted"}`}>
-              {showPhoneProblem ? phoneProblem : "Needed by the payment provider for your receipt."}
-            </p>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
             {me.plan === "free" && (
               <button onClick={() => void upgrade("pro")} disabled={busy || !phoneOk} className="btn-primary">{buyLabel("pro", "Get Pro")}</button>
             )}
@@ -260,7 +258,10 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
             <button onClick={() => void upgrade("ultra")} disabled={busy || !phoneOk} className={me.plan === "pro" ? "btn-primary" : "btn"}>
               {buyLabel("ultra", me.plan === "pro" ? "Upgrade to Ultra" : me.plan === "ultra" ? "Add 30 days of Ultra" : "Get Ultra")}
             </button>
-          </div>
+            </div>
+            <p id="phone-help" aria-live="polite" className={`mt-2 text-xs ${showPhoneProblem ? "text-danger" : "text-muted"}`}>
+              {showPhoneProblem ? phoneProblem : "Needed by the payment provider for your receipt."}
+            </p>
           </div>
         )}
         {state === "waiting" && (
