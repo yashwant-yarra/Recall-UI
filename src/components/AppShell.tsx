@@ -12,6 +12,7 @@ import { ProLock } from "./ProLock";
 import { QuizView } from "./QuizView";
 import { Talk } from "./Talk";
 import { Tasks } from "./Tasks";
+import { VerifyEmail } from "./VerifyEmail";
 
 // Ask leads: it's where a study session happens; the rest feed it.
 const TABS = [
@@ -76,6 +77,9 @@ export function AppShell() {
   // False while the plan is still loading, so Pro users never see a lock flash. A running trial is Pro access.
   const isFree = me?.plan === "free" && !trialing;
   const onTrial = me?.trial?.available ? startTrial : undefined;
+
+  // The API refuses every other route until the email is verified, so ask for that first.
+  if (me?.email_verified === false) return <VerifyEmail onVerified={refreshMe} />;
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[13rem_1fr]">
