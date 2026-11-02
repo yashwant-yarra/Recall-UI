@@ -28,6 +28,12 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  # GA4 measurement ID (public). Remove this entry to turn analytics off.
+  - variable: NEXT_PUBLIC_GA_ID
+    value: G-MBGTJ69E21
+    availability:
+      - BUILD
+      - RUNTIME
   # Shows the buy buttons on the Account page. Turn on only while the API uses production Cashfree keys.
   - variable: NEXT_PUBLIC_PAYMENTS_ENABLED
     value: "true"

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Archivo } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { AuthProvider } from "@/components/AuthProvider";
 import "katex/dist/katex.min.css";
 import "./globals.css";
@@ -19,6 +20,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full font-sans">
         <AuthProvider>{children}</AuthProvider>
       </body>
+      {/* Loads GA4 only when an ID is configured, so local dev without one sends nothing. */}
+      {process.env.NEXT_PUBLIC_GA_ID && <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />}
     </html>
   );
 }
