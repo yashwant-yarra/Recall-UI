@@ -322,9 +322,9 @@ export function Chat({ initialFileId, refreshKey, canWeb }: { initialFileId: str
   );
 
   return (
-    <section className="grid gap-6 xl:grid-cols-[14rem_minmax(0,1fr)]">
+    <section className="grid gap-6 xl:grid-cols-[11rem_minmax(0,1fr)]">
       {/* Chapter band: the heading with the chosen document as its running head, ruled beneath. */}
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b-2 border-fg pb-3 xl:col-span-2">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-border pb-5 xl:col-span-2">
         <div>
           <h1 className="chapter">Ask</h1>
           <p className="mt-2 max-w-[60ch] text-sm text-muted">Ask questions about your documents and explore explanations with sources.</p>
@@ -337,7 +337,7 @@ export function Chat({ initialFileId, refreshKey, canWeb }: { initialFileId: str
                   setPreview(null);
                 }}
                 disabled={busy} aria-label="Document"
-                className="field w-64 max-w-full border-transparent bg-surface text-right text-base font-bold text-fg sm:w-80">
+                className="field w-64 max-w-full border-border bg-surface text-left text-base font-bold text-fg sm:w-80">
           <option value="" className="bg-surface text-fg">All documents</option>
           {docs.map((d) => <option key={d.file_id} value={d.file_id} className="bg-surface text-fg">{docName(d)}</option>)}
         </select>
@@ -351,10 +351,10 @@ export function Chat({ initialFileId, refreshKey, canWeb }: { initialFileId: str
       <div className="flex min-w-0 flex-col gap-4">
         {/* Answer style. */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <div className="inline-flex gap-4" role="group" aria-label="Answer style">
+          <div className="inline-flex gap-1 rounded-lg border border-border bg-surface p-1" role="group" aria-label="Answer style">
             {(["explain", "answer"] as const).map((m) => (
               <button key={m} type="button" onClick={() => setMode(m)} aria-pressed={mode === m}
-                      className={`py-1.5 text-sm font-semibold transition ${
+                      className={`px-3 py-1.5 text-sm font-semibold transition ${
                         mode === m ? "current" : "text-muted hover:text-fg"}`}>
                 {m === "explain" ? "Explain" : "Quick answer"}
               </button>
@@ -379,10 +379,10 @@ export function Chat({ initialFileId, refreshKey, canWeb }: { initialFileId: str
         </p>
         {error && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
 
-        <div className="sheet flex flex-col">
-          <div className="divide-y divide-border">
+        <div className={`study-content ${messages.length === 0 ? "study-content-empty" : ""}`}>
+          <div className="study-messages divide-y divide-border">
             {messages.length === 0 && (
-              <div className="ruled px-5 py-10 pl-[3.6rem] sm:px-8 sm:pl-[3.6rem]">
+              <div className="study-empty">
                 <p className="chapter !text-3xl sm:!text-4xl">What are you stuck on?</p>
                 <p className="mt-3 max-w-[52ch] text-sm leading-7 text-muted">
                   Ask in any language. Every answer is printed from your own pages, and the numbers{" "}
@@ -390,13 +390,13 @@ export function Chat({ initialFileId, refreshKey, canWeb }: { initialFileId: str
                   <sup><span className="hl hl-solid hl-n2 inline-block rounded-[2px] px-1 text-[0.95em] leading-[1.35] font-bold">2</span></sup>{" "}
                   open the exact page they came from.
                 </p>
-                <p className="label mt-7">Try asking</p>
-                <ul className="mt-2">
-                  {["Explain the main idea of this chapter in simple words", "What are the key definitions I should memorise?", "Give me 5 questions to test myself on this"].map((q, i) => (
+
+                <ul className="study-prompts mt-2">
+                  {["Explain the main idea of this chapter in simple words", "What are the key definitions I should memorise?", "Give me 5 questions to test myself on this"].map((q) => (
                     <li key={q}>
                       <button type="button" onClick={() => setQuestion(q)}
-                              className="py-1.5 text-left text-[0.97rem] font-semibold text-accent hover:text-fg">
-                        <span className={`hl hl-n${i + 1} box-decoration-clone`}>{q}</span>
+                              className="py-1.5 text-left text-[0.97rem] font-normal text-muted hover:text-fg">
+                        <span>{q}</span>
                       </button>
                     </li>
                   ))}
@@ -405,7 +405,7 @@ export function Chat({ initialFileId, refreshKey, canWeb }: { initialFileId: str
             )}
             {messages.map((m, i) =>
               m.role === "user" ? (
-                // The student's own words, in blue ballpoint.
+                // Keep the question distinct from its sourced answer.
                 <p key={i} className="!border-b-0 px-5 pt-6 pb-2 text-[1.05rem] font-semibold whitespace-pre-wrap text-accent sm:px-8">{m.text}</p>
               ) : (
                 <div key={i} className="px-5 pb-6 sm:px-8">
@@ -415,7 +415,7 @@ export function Chat({ initialFileId, refreshKey, canWeb }: { initialFileId: str
               ),
             )}
           </div>
-          <form onSubmit={ask} className="sticky bottom-14 flex items-end gap-2 border-t border-border bg-surface p-3 lg:bottom-0">
+          <form onSubmit={ask} className="study-composer sticky bottom-16 flex items-end gap-2 border-t border-border bg-surface p-3 lg:bottom-0">
             {/* A one-row textarea that grows with its text (and its placeholder on narrow phones).
                 Enter sends, Shift+Enter adds a line. */}
             <textarea value={question} onChange={(e) => setQuestion(e.target.value)} maxLength={2000} rows={1}

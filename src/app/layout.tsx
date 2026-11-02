@@ -9,6 +9,7 @@ const archivo = Archivo({ variable: "--font-archivo", subsets: ["latin"], axes: 
 
 export const metadata: Metadata = {
   title: "Recall",
+  icons: { icon: { url: "/recall-mark.svg", type: "image/svg+xml", sizes: "any" } },
   description: "Search your documents and voice notes, and let an agent act on them with your approval.",
 };
 

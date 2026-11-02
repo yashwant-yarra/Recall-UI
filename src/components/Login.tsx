@@ -1,5 +1,7 @@
 "use client";
 
+import { Logo } from "./Logo";
+
 import { FirebaseError } from "firebase/app";
 import { useState } from "react";
 import { useAuth } from "./AuthProvider";
@@ -78,19 +80,18 @@ export function Login() {
 
   return (
     <>
-    <main className="min-h-screen px-4 py-8 sm:px-8 lg:flex lg:items-center lg:py-12">
-      <div className="mx-auto grid w-full max-w-xl gap-10 lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-center lg:gap-20">
-        <section className="min-w-0">
-          <p className="label border-b border-border pb-4">Your study workspace</p>
-          <h1 className="chapter mt-7 !text-6xl sm:!text-8xl">Recall<span className="text-accent">.</span></h1>
-          <p className="mt-5 max-w-xl text-2xl leading-snug font-semibold sm:text-3xl">
-            Everything you learn, <span className="hl hl-solid hl-n1 px-1">within reach.</span>
-          </p>
+    <main className="min-h-screen px-4 py-6 sm:px-8 lg:flex lg:items-center lg:py-10">
+      <div className="mx-auto grid w-full max-w-xl gap-10 lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-center lg:gap-14">
+        <section className="login-intro min-w-0">
+          <Logo />
+          <h1 className="login-title mt-12 max-w-xl">
+            Everything you learn, <span className="text-muted">within reach.</span>
+          </h1>
           <p className="mt-4 max-w-lg text-base leading-7 text-muted">
             Bring your documents and voice notes together. Ask questions, talk through ideas, and turn what you find into action.
           </p>
           {/* A sample page: what an answer looks like, with its numbered sources in the margin. */}
-          <div aria-hidden="true" className="sheet ruled mt-10 hidden px-6 lg:max-w-lg lg:rotate-[-1.5deg] py-5 pl-[3.6rem] sm:block">
+          <div aria-hidden="true" className="login-example hidden sm:block">
             <p className="text-[1.05rem] font-semibold text-accent">Why does ice float on water?</p>
             <p className="mt-3 text-[0.97rem] leading-7">
               <span className="hl-quiet hl-n1" data-on="true">Water expands as it freezes, so ice is less dense than liquid water.</span>
@@ -103,11 +104,11 @@ export function Login() {
             <p className="mt-1 text-sm"><span className="hl hl-solid hl-n2 px-0.5"><b>2</b> chemistry-ch4.pdf, p. 3</span></p>
           </div>
         </section>
-        <section className="w-full lg:max-w-md lg:justify-self-end">
-        <form onSubmit={submit} className="sheet space-y-4 p-5 sm:p-7">
+        <section className="login-account w-full lg:max-w-md lg:justify-self-end">
+        <form onSubmit={submit} className="login-form space-y-4 py-3 sm:p-5">
           <div className="border-b border-border pb-5">
-            <p className="label">Welcome to Recall</p>
-            <h2 className="mt-2 text-2xl font-bold">{mode === "in" ? "Pick up where you left off" : "Start your study space"}</h2>
+
+            <h2 className="text-3xl leading-tight font-semibold tracking-tight">{mode === "in" ? "Pick up where you left off" : "Start your study space"}</h2>
             <p className="mt-1 text-sm text-muted">{mode === "in" ? "Sign in to continue to your workspace." : "Choose how you’d like to create your account."}</p>
           </div>
 

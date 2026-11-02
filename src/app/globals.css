@@ -1,22 +1,21 @@
 @import "tailwindcss";
 
-/* Highlighted textbook: a white page on a cool desk. Printed answers in ink, the student's words in
-   blue ballpoint, marking in red pen, citations as fluorescent highlighter. Dark mode follows the OS. */
+/* Neutral reading workspace. Color is reserved for sources and semantic status. */
 :root {
-  --bg: #e9ecf0; /* the desk */
+  --bg: #f7f7f8; /* the desk */
   --surface: #ffffff; /* the page */
-  --fg: #15171c; /* printed ink */
-  --muted: #5a606c;
-  --border: #d5dae2; /* ruled lines */
-  --accent: #1d3fbf; /* blue ballpoint: the student's own words, selection, focus */
+  --fg: #202024; /* printed ink */
+  --muted: #67676f;
+  --border: #e2e2e6; /* ruled lines */
+  --accent: #41414a; /* selection and focus */
   --accent-fg: #ffffff;
-  --accent-soft: #e4eaff;
+  --accent-soft: #ededf0;
   --danger: #cf2430; /* red pen */
   --warn: #a65400;
   --ok: #157a3f;
-  --ink-btn: #15171c;
+  --ink-btn: #202024;
   --ink-btn-fg: #ffffff;
-  --on-hl: #15171c; /* text sitting on a highlighter stroke */
+  --on-hl: #202024; /* text sitting on a highlighter stroke */
   --hl-1: #ffea4f; /* yellow */
   --hl-2: #8ef0a6; /* green */
   --hl-3: #ffa6d3; /* pink */
@@ -27,19 +26,19 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0b0c0f;
-    --surface: #15171b;
-    --fg: #eceef2;
-    --muted: #9ba2ae;
-    --border: #2a2e36;
-    --accent: #93b1ff;
-    --accent-fg: #0b0c0f;
-    --accent-soft: #1b2440;
+    --bg: #111113;
+    --surface: #19191c;
+    --fg: #f0f0f2;
+    --muted: #a6a6af;
+    --border: #303036;
+    --accent: #d5d5df;
+    --accent-fg: #111113;
+    --accent-soft: #29292f;
     --danger: #ff7272;
     --warn: #f0b45a;
     --ok: #6fe39a;
-    --ink-btn: #eceef2;
-    --ink-btn-fg: #0b0c0f;
+    --ink-btn: #f0f0f2;
+    --ink-btn-fg: #111113;
     --hl-1: #f2dc3c;
     --hl-2: #74e092;
     --hl-3: #f58fc2;
@@ -68,8 +67,7 @@
 }
 
 body {
-  /* The desk: a faint dot grid so the grey isn't a void. */
-  background: radial-gradient(color-mix(in srgb, var(--fg) 14%, transparent) 1px, transparent 1.2px) 0 0 / 22px 22px, var(--bg);
+  background: var(--bg);
   color: var(--fg);
   font-variant-numeric: tabular-nums;
 }
@@ -90,44 +88,44 @@ html {
 }
 
 @layer components {
-  /* Chapter-style headings: Archivo at its condensed width. */
+  /* A quiet type hierarchy keeps long study sessions readable. */
   .chapter {
-    font-stretch: 72%;
-    @apply text-4xl leading-none font-extrabold tracking-[-0.01em] uppercase sm:text-5xl;
+    font-stretch: 100%;
+    @apply text-3xl leading-tight font-semibold tracking-[-0.03em] sm:text-4xl;
   }
   .label {
-    font-stretch: 85%;
+    font-stretch: 100%;
     @apply text-xs font-bold tracking-[0.06em] text-muted uppercase;
   }
   .sheet {
-    @apply rounded-[3px] border border-border bg-surface;
-    box-shadow: var(--shadow);
+    @apply rounded-xl border border-border bg-surface;
+    box-shadow: none;
   }
-  /* An empty page: a red margin rule down the left, like a fresh sheet of lined paper. */
+  /* Empty states share the neutral content surface. */
   .ruled {
-    background-image:
-      linear-gradient(90deg, transparent 2.6rem, color-mix(in srgb, var(--danger) 60%, transparent) 2.6rem, color-mix(in srgb, var(--danger) 60%, transparent) calc(2.6rem + 1px), transparent calc(2.6rem + 1px));
+    background: color-mix(in srgb, var(--accent-soft) 38%, var(--surface));
   }
   .card {
-    @apply rounded-[3px] border border-border bg-surface;
+    @apply rounded-xl border border-border bg-surface;
   }
   .field {
-    @apply w-full rounded-[3px] border border-border bg-surface px-3 py-2 text-sm text-fg outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60;
+    @apply w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-fg outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-[3px] border border-fg/25 bg-surface px-3 py-2 text-sm font-semibold transition hover:border-fg disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm font-semibold transition hover:border-fg disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-[3px] border border-ink bg-ink px-3.5 py-2 text-sm font-semibold text-ink-fg transition hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-40;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-ink-fg transition hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-40;
   }
-  /* Current section: a blue-ballpoint underline. Highlighter colours are reserved for sources. */
+  /* Selection uses neutral contrast; highlighter colors identify sources. */
   .current {
     color: var(--fg);
-    text-decoration: underline 2px var(--accent);
-    text-underline-offset: 6px;
+    background: var(--accent-soft);
+    border-radius: 6px;
+    box-shadow: inset 0 -2px var(--accent);
   }
   .pill {
-    @apply inline-flex items-center rounded-[3px] px-1.5 py-0.5 text-xs font-semibold;
+    @apply inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-semibold;
   }
 
   /* A highlighter stroke. Pick the colour with .hl-n1..5. A thin underline marks it at rest;
@@ -216,4 +214,41 @@ html {
   .hl-quiet {
     transition: none;
   }
+}
+
+/* Workspace chrome stays outside the mounted study screens. */
+.workspace-rail { background: var(--bg); }
+.workspace-nav { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 8px; text-align: left; }
+.workspace-nav[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+.workspace-nav:hover { background: var(--accent-soft); }
+.brand { font-size: 1.65rem; font-weight: 650; letter-spacing: -.04em; }
+.login-intro { padding: 40px 48px 40px 0; }
+.login-title { font-size: 3.5rem; line-height: 1.08; letter-spacing: -.04em; font-weight: 500; text-wrap: balance; }
+.login-example { background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-top: 40px; }
+.login-form { border: 0; background: transparent; }
+.login-account { border-left: 1px solid var(--border); padding-left: 40px; }
+.login-form .btn, .login-form .btn-primary { min-height: 44px; }
+.study-content { display: flex; flex-direction: column; min-height: 580px; min-height: min(680px, calc(100svh - 245px)); }
+.study-content > .study-messages { flex: 1; }
+.study-empty { max-width: 660px; margin: 0 auto; padding: 64px 24px 48px; }
+.study-empty .chapter { font-weight: 500; letter-spacing: -.035em; }
+.study-prompts { margin-top: 36px; }
+.study-prompts li + li { border-top: 1px solid var(--border); }
+.study-prompts button { width: 100%; padding: 14px 0; }
+.study-prompts button:hover { color: var(--fg); }
+.study-prompts button::after { content: "\2197"; float: right; margin-left: 12px; }
+.study-composer { border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 4px 18px -8px rgb(0 0 0 / .15); margin-top: 24px; }
+.study-content:not(.study-content-empty) { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+.study-content:not(.study-content-empty) .study-composer { border-width: 1px 0 0; border-radius: 0 0 14px 14px; box-shadow: none; }
+@media (max-width: 1023px) { .login-account { border: 0; padding: 0; } .login-intro { padding: 16px 0; } }
+@media (max-width: 639px) {
+  .brand { font-size: 1.2rem; }
+  .login-intro { padding: 12px 0; }
+  .login-title { font-size: 2.5rem; }
+  .study-empty { padding: 36px 0 24px; }
+  .study-content { min-height: 0; }
+  .study-prompts button { font-size: .875rem; }
+  .study-composer { flex-wrap: wrap; }
+  .study-composer textarea { flex-basis: 100%; }
+  .study-composer button:last-child { margin-left: auto; }
 }

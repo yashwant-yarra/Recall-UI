@@ -8,6 +8,7 @@ import { Agent } from "./Agent";
 import { useAuth } from "./AuthProvider";
 import { Chat } from "./Chat";
 import { Library } from "./Library";
+import { Logo } from "./Logo";
 import { ProLock } from "./ProLock";
 import { QuizView } from "./QuizView";
 import { Talk } from "./Talk";
@@ -15,6 +16,16 @@ import { Tasks } from "./Tasks";
 import { VerifyEmail } from "./VerifyEmail";
 
 // Ask leads: it's where a study session happens; the rest feed it.
+const NAV_PATHS = {
+  chat: "M5 4h14v12H9l-4 4V4Z M9 8h6 M9 12h4",
+  library: "M4 4h6v16H4z M10 4h6v16h-6 M18 4l4 15-4 1-4-15",
+  talk: "M9 5a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0V5Z M5 10v2a7 7 0 0 0 14 0v-2 M12 19v3 M9 22h6",
+  quiz: "M8 4H5v17h14V4h-3 M8 2h8v4H8z M8 11l2 2 5-4 M8 17h7",
+  agent: "m12 3 3 6 6 3-6 3-3 6-3-6-6-3 6-3Z",
+  tasks: "M9 6h12 M9 12h12 M9 18h12 M3 6l1 1 2-3 M3 12l1 1 2-3 M3 18l1 1 2-3",
+  account: "M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z M4 21v-2a8 8 0 0 1 16 0v2",
+};
+
 const TABS = [
   { id: "chat", label: "Ask" },
   { id: "library", label: "Library" },
@@ -82,18 +93,19 @@ export function AppShell() {
   if (me?.email_verified === false) return <VerifyEmail onVerified={refreshMe} />;
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[13rem_1fr]">
+    <div className="min-h-screen lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
       {/* Desktop: the book's index down the left edge. */}
-      <aside className="hidden border-r border-border lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:px-5 lg:py-6">
+      <aside className="workspace-rail hidden border-r border-border lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:px-5 lg:py-6">
         <div className="flex items-center gap-2">
-          <span className="chapter !text-3xl">Recall</span>
+          <Logo />
           {plan}
         </div>
-        <nav className="mt-10 flex flex-col items-start gap-1" aria-label="Sections">
+        <nav className="mt-12 flex flex-col items-start gap-1.5" aria-label="Sections">
           {TABS.map((t) => (
             <button key={t.id} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}
-                    className={`py-1 text-[0.95rem] font-semibold transition ${
-                      tab === t.id ? "current" : "text-muted hover:text-fg"}`}>
+                    className={`workspace-nav text-sm font-medium transition ${
+                      tab === t.id ? "text-accent" : "text-muted hover:text-fg"}`}>
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={NAV_PATHS[t.id]} /></svg>
               {t.label}
             </button>
           ))}
@@ -107,7 +119,7 @@ export function AppShell() {
       {/* Phones: a slim header; sections move to the bottom bar. */}
       <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
-          <span className="chapter !text-2xl">Recall</span>
+          <Logo />
           {plan}
         </div>
         <div className="flex items-center gap-2">
@@ -119,7 +131,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl px-4 pt-6 pb-28 sm:px-8 lg:pt-10 lg:pb-12">
+      <main className="mx-auto w-full max-w-6xl px-4 pt-6 pb-28 sm:px-8 lg:px-10 lg:pt-10 lg:pb-12">
         {tab !== "chat" && <h1 className="chapter mb-6 lg:mb-8">{tab === "tasks" ? "My tasks" : current.label}</h1>}
         {/* Screens stay mounted so a running answer or agent run isn't lost when switching tabs. */}
         <div hidden={tab !== "chat"}>
@@ -145,8 +157,9 @@ export function AppShell() {
            className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-6 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden">
         {TABS.filter((t) => t.id !== "account").map((t) => (
           <button key={t.id} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}
-                  className="flex justify-center py-3">
-            <span className={`text-sm font-semibold ${tab === t.id ? "current" : "text-muted"}`}>
+                  className="flex flex-col items-center justify-center gap-1 py-2.5">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={NAV_PATHS[t.id]} /></svg>
+            <span className={`text-xs font-semibold ${tab === t.id ? "current" : "text-muted"}`}>
               {t.label}
             </span>
           </button>
