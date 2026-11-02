@@ -10,6 +10,7 @@ import { MicButton } from "./MicButton";
 import { Preview } from "./Preview";
 import { SpeakButton } from "./SpeakButton";
 import { Spinner } from "./Spinner";
+import { parseAnswer, type Block as AnswerBlock, type ListBlock } from "@/lib/answerBlocks";
 
 type Message = { role: "user" | "assistant"; text: string; sources?: Source[]; web?: WebSource[]; error?: string; live?: boolean };
 
@@ -92,32 +93,52 @@ function Cited({ text, sources, onCite, active, setActive, citations = true }: {
   );
 }
 
-export function AnswerText({ text, ...props }: { text: string; sources: Source[]; onCite: (s: Source) => void; citations?: boolean } & Lit) {
-  const lines = text.replace(/\$\$([\s\S]*?)\$\$/g, (_, math: string) => `$$${math.replace(/\n/g, " ")}$$`).split("\n");
-  const blocks: React.ReactNode[] = [];
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line.trim()) continue;
-    const bullet = line.match(/^(\s*)[-*]\s+(.+)$/);
-    const ordered = line.match(/^(\s*)\d+[.)]\s+(.+)$/);
-    if (bullet || ordered) {
-      const items: React.ReactNode[] = [];
-      const pattern = bullet ? /^(\s*)[-*]\s+(.+)$/ : /^(\s*)\d+[.)]\s+(.+)$/;
-      let match: RegExpMatchArray | null;
-      while (i < lines.length && (match = lines[i].match(pattern))) {
-        items.push(<li key={i} className={match[1].length >= 2 ? "ml-5" : ""}><Cited text={match[2]} {...props} /></li>);
-        i++;
-      }
-      i--;
-      const listClass = `space-y-1 pl-5 marker:text-muted ${bullet ? "list-disc" : "list-decimal"}`;
-      blocks.push(bullet ? <ul key={i} className={listClass}>{items}</ul> : <ol key={i} className={listClass}>{items}</ol>);
-    } else {
-      const heading = line.match(/^#{1,3}\s+(.+)$/);
-      blocks.push(heading ? <p key={i} className="font-bold"><Cited text={heading[1]} {...props} /></p> :
-        <p key={i} className="whitespace-pre-wrap"><Cited text={line} {...props} /></p>);
-    }
+type TextProps = { sources: Source[]; onCite: (s: Source) => void; citations?: boolean } & Lit;
+
+function List({ list, nested = false, ...props }: { list: ListBlock; nested?: boolean } & TextProps) {
+  const className = `space-y-1 pl-5 marker:text-muted ${list.ordered ? "list-decimal" : "list-disc"} ${nested ? "mt-1" : ""}`;
+  const items = list.items.map((item, i) => (
+    // value keeps the model's own number, so a list split by other content doesn't restart at 1.
+    <li key={i} value={list.ordered ? item.value : undefined}>
+      <Cited text={item.text} {...props} />
+      {item.children && <List list={item.children} nested {...props} />}
+    </li>
+  ));
+  return list.ordered ? <ol className={className}>{items}</ol> : <ul className={className}>{items}</ul>;
+}
+
+function Block({ block, ...props }: { block: AnswerBlock } & TextProps) {
+  switch (block.kind) {
+    case "h": return <p className="font-bold"><Cited text={block.text} {...props} /></p>;
+    case "hr": return <hr className="border-border" />;
+    case "code": return <pre className="overflow-x-auto rounded-lg bg-bg p-3 font-mono text-sm leading-6"><code>{block.text}</code></pre>;
+    case "list": return <List list={block} {...props} />;
+    case "table": return (
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr>{block.head.map((c, i) => <th key={i} className="border-b border-border px-2 py-1.5 text-left font-semibold"><Cited text={c} {...props} /></th>)}</tr>
+          </thead>
+          <tbody>
+            {block.rows.map((row, r) => (
+              <tr key={r} className="border-b border-border last:border-0">
+                {row.map((c, i) => <td key={i} className="px-2 py-1.5 align-top"><Cited text={c} {...props} /></td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+    default: return <p className="whitespace-pre-wrap"><Cited text={block.text} {...props} /></p>;
   }
-  return <div className="max-w-[68ch] space-y-3 text-[0.97rem] leading-7 [&_.katex-display]:my-0">{blocks}</div>;
+}
+
+export function AnswerText({ text, ...props }: { text: string } & TextProps) {
+  return (
+    <div className="max-w-[68ch] space-y-3 text-[0.97rem] leading-7 [&_.katex-display]:my-0">
+      {parseAnswer(text).map((block, i) => <Block key={i} block={block} {...props} />)}
+    </div>
+  );
 }
 
 function Answer({ m, streaming, onCite }: { m: Message; streaming: boolean; onCite: (s: Source) => void }) {
