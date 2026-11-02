@@ -40,6 +40,7 @@ export default function Terms() {
 
       <h2>Deleting your data</h2>
       <p>You can delete all your documents, voice notes, chats, quizzes, tasks and drafts from your Account page at any time. This cannot be undone.</p>
+      <p>If you stay over the Free plan’s file or storage limit for 90 days after your pass or trial ends, we delete your oldest files until the rest fit within the Free limits. Recall shows the date on every screen beforehand, and buying a pass or deleting files yourself stops it.</p>
 
       <h2>Availability and liability</h2>
       <p>We work to keep Recall available but do not promise uninterrupted service. The service is provided &quot;as is&quot;. To the extent the law allows, we are not liable for indirect or consequential losses, and our total liability for any claim is limited to the amount you paid us in the three months before the claim.</p>

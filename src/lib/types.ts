@@ -40,7 +40,8 @@ export type PlanLimit = { key: string; label: string; free: number; pro: number 
 export type Tier = "pro" | "ultra";
 /** The account's one free trial of Pro: running now, when it ends, and whether it can still be started. */
 export type Trial = { active: boolean; ends_at: string | null; available: boolean; blocked?: string | null };
-export type Me = { user_id: string; plan: "free" | Tier; paid_until?: string | null; email_verified?: boolean; trial?: Trial; limits?: PlanLimit[] };
+export type Storage = { used_bytes: number; files: number; over_free_limit: boolean; delete_after: string | null };
+export type Me = { user_id: string; plan: "free" | Tier; paid_until?: string | null; storage?: Storage; email_verified?: boolean; trial?: Trial; limits?: PlanLimit[] };
 
 export type AgentRun = {
   run_id: string;

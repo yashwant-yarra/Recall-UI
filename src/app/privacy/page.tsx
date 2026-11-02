@@ -35,6 +35,7 @@ export default function Privacy() {
       <h2>Your choices</h2>
       <ul>
         <li>Delete all your documents, voice notes, chats, quizzes, tasks and drafts from the Account page whenever you like.</li>
+        <li>If you stay over the Free plan’s file or storage limit for 90 days after your pass or trial ends, we delete your oldest files until the rest fit within the Free limits. Recall shows the date on every screen beforehand, and buying a pass or deleting files yourself stops it.</li>
         <li>To delete your account or get a copy of your data, <Link href="/contact">contact us</Link> and we will act on it within 30 days.</li>
         <li>Billing records may be kept as long as the law requires for tax and accounting.</li>
       </ul>

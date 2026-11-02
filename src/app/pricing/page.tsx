@@ -21,7 +21,7 @@ export default function Pricing() {
       </div>
 
       <h2>What each plan includes</h2>
-      <p>Usage limits reset every Monday at 00:00 UTC (5:30 AM IST). Total storage is the space your files take up at any time, so it frees up when you delete files.</p>
+      <p>Usage limits reset every Monday at 00:00 UTC (5:30 AM IST). Total storage is the space your files take up at any time, so it frees up when you delete files. After a pass or trial ends, files over the Free limits are kept for 90 days; after that the oldest are deleted until the rest fit.</p>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">Weekly limits by plan</caption>

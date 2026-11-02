@@ -11,7 +11,8 @@ export default function Refund() {
       <h2>Cancelling</h2>
       <ul>
         <li>Pro and Ultra are one-time 30-day passes. They never renew or charge you again, so there is nothing to cancel: a pass simply ends after 30 days and you move to Free.</li>
-        <li>When a pass ends, your documents and data stay. You can delete them yourself from the Account page at any time.</li>
+        <li>When a pass ends, nothing is deleted straight away: your documents and data stay, and you can delete them yourself from the Account page at any time.</li>
+        <li>If you stay over the Free plan’s file or storage limit for 90 days after your pass or trial ends, we delete your oldest files until the rest fit within the Free limits. Recall shows the date on every screen beforehand, and buying a pass or deleting files yourself stops it.</li>
         <li>The free Pro trial ({TRIAL_DAYS} days) needs no card and ends on its own.</li>
       </ul>
 

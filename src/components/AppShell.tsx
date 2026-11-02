@@ -12,6 +12,7 @@ import { Logo } from "./Logo";
 import { ProLock } from "./ProLock";
 import { QuizView } from "./QuizView";
 import { Talk } from "./Talk";
+import { StorageNotice } from "./StorageNotice";
 import { Tasks } from "./Tasks";
 import { VerifyEmail } from "./VerifyEmail";
 
@@ -132,6 +133,7 @@ export function AppShell() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 pt-6 pb-28 sm:px-8 lg:px-10 lg:pt-10 lg:pb-12">
+        <StorageNotice me={me} onLibrary={() => go("library")} onPlans={() => go("account")} />
         {tab !== "chat" && <h1 className="chapter mb-6 lg:mb-8">{tab === "tasks" ? "My tasks" : current.label}</h1>}
         {/* Screens stay mounted so a running answer or agent run isn't lost when switching tabs. */}
         <div hidden={tab !== "chat"}>
