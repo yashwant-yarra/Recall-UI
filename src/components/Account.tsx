@@ -32,10 +32,20 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
       setBuying(null);
     }
   }, [me, buying]);
-  // Cashfree needs a mobile number for every payment link. Accepts +91, spaces or a leading 0.
+  // Cashfree needs a mobile number for every order. Accepts spaces, dashes, +91 or a leading 0.
   const [phone, setPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false); // left the field once: show what's wrong
   const digits = phone.replace(/\D/g, "").replace(/^(91|0)(?=\d{10}$)/, "");
-  const phoneOk = /^[6-9]\d{9}$/.test(digits);
+  const phoneProblem =
+    /^[1-5]/.test(digits) ? "Indian mobile numbers start with 6, 7, 8 or 9."
+    : digits.length < 10 ? "Enter your 10-digit mobile number."
+    : digits.length > 10 ? "That’s more than 10 digits."
+    : !/^[6-9]/.test(digits) ? "Indian mobile numbers start with 6, 7, 8 or 9."
+    : /^(\d)\1{9}$/.test(digits) ? "Enter a real mobile number."
+    : null;
+  const phoneOk = phoneProblem === null;
+  // Too short is only an error once they've left the field; anything else shows as soon as it's typed.
+  const showPhoneProblem = !!phoneProblem && (phoneTouched || digits.length >= 10 || /^[1-5]/.test(digits));
   const [wiping, setWiping] = useState<"idle" | "confirming" | "deleting">("idle");
   const [confirmText, setConfirmText] = useState("");
   const [wipeError, setWipeError] = useState<string | null>(null);
@@ -227,13 +237,20 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
         {/* Plan actions: Free can buy either tier, Pro can extend or move up to Ultra, Ultra can extend.
             Each purchase is a 30-day pass; nothing is charged again automatically. */}
         {PAYMENTS_ON && me && (
-          <div className="mt-5 flex flex-wrap items-end gap-2">
-            <label className="block">
-              <span className="label">Mobile number</span>
-              <input type="tel" inputMode="numeric" autoComplete="tel-national" value={phone}
-                     onChange={(e) => setPhone(e.target.value)} disabled={busy} placeholder="98765 43210"
-                     aria-describedby="phone-help" className="field mt-1 w-44" />
-            </label>
+          <div className="mt-6 border-t border-border pt-5">
+            <label htmlFor="phone" className="label block">Mobile number</label>
+            <div className="relative mt-2 w-full max-w-xs">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted">+91</span>
+              <input id="phone" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={16}
+                     value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^\d\s+-]/g, ""))}
+                     onBlur={() => setPhoneTouched(true)} disabled={busy} placeholder="98765 43210"
+                     aria-invalid={showPhoneProblem} aria-describedby="phone-help"
+                     className={`field pl-12 ${showPhoneProblem ? "border-danger focus:border-danger focus:ring-danger/20" : ""}`} />
+            </div>
+            <p id="phone-help" aria-live="polite" className={`mt-2 text-xs ${showPhoneProblem ? "text-danger" : "text-muted"}`}>
+              {showPhoneProblem ? phoneProblem : "Needed by the payment provider for your receipt."}
+            </p>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             {me.plan === "free" && (
               <button onClick={() => void upgrade("pro")} disabled={busy || !phoneOk} className="btn-primary">{buyLabel("pro", "Get Pro")}</button>
             )}
@@ -243,7 +260,7 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
             <button onClick={() => void upgrade("ultra")} disabled={busy || !phoneOk} className={me.plan === "pro" ? "btn-primary" : "btn"}>
               {buyLabel("ultra", me.plan === "pro" ? "Upgrade to Ultra" : me.plan === "ultra" ? "Add 30 days of Ultra" : "Get Ultra")}
             </button>
-            <p id="phone-help" className="w-full text-xs text-muted">The payment provider needs a 10-digit Indian mobile number for the receipt.</p>
+          </div>
           </div>
         )}
         {state === "waiting" && (
