@@ -43,3 +43,11 @@ next-env.d.ts
 
 # editor
 .idea/
+
+# AI tooling
+.impeccable/
+.claude/
+CLAUDE.md
+AGENTS.md
+DESIGN.md
+PRODUCT.md
