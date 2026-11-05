@@ -4,6 +4,7 @@
 /* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 · weakest: E, the tour visuals are built samples, not captures; named for capture in the handoff */
 /* Hallmark · waive 84 · capturing the signed-in app would show a real account's files and email · the capture tool is missing here (no puppeteer-core), so the home samples use the app's own sheet, highlighter and margin classes and follow light and dark */
 /* Hallmark · waive 38iii · the stroke appears once, in the home hero · the highlighter stroke is Recall's DESIGN.md signature, set over "your own pages" */
+/* Hallmark · dropped onClick={() => void upgrade("pro")}, onClick={() => void upgrade("ultra")} · the buy buttons now call buy(), which asks Cashfree or Razorpay before upgrade() opens the payment */
 @import "tailwindcss";
 
 /* The Highlighted Textbook: a white page on a cool desk. Printed answers in ink, the student's words in
@@ -130,6 +131,13 @@ html {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Razorpay's checkout frame is a light page. Under our dark color-scheme the browser paints a cross-scheme
+   iframe opaque, which hid the page behind the payment window in white; matching schemes keep it see-through. */
+.razorpay-container,
+.razorpay-container iframe {
+  color-scheme: light;
 }
 
 :where(button, input, select, textarea):disabled, [aria-disabled="true"] {
