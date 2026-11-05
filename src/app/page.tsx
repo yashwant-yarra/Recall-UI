@@ -2,20 +2,14 @@
 
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/components/AuthProvider";
-import { Login } from "@/components/Login";
-import { LoadingMark } from "@/components/Spinner";
+import { Home as Landing } from "@/components/Home";
+import { Opening } from "@/components/Spinner";
 
+// Signed in: the workspace. Signed out: the home page, with sign-in at /login and /signup.
+// ponytail: the home page renders after Firebase restores the session, so crawlers see the loading state;
+// move the app to its own route if search traffic starts to matter.
 export default function Home() {
   const { user, loading } = useAuth();
-  if (loading)
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center" role="status">
-        <LoadingMark />
-        <div>
-          <p className="text-lg font-semibold">Opening Recall</p>
-          <p className="mt-1 text-sm text-muted">Getting your workspace ready…</p>
-        </div>
-      </div>
-    );
-  return user ? <AppShell /> : <Login />;
+  if (loading) return <Opening />;
+  return user ? <AppShell /> : <Landing />;
 }

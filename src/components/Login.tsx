@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Logo } from "./Logo";
 
 import { FirebaseError } from "firebase/app";
@@ -44,9 +45,9 @@ function ProviderIcon({ provider }: { provider: "google" | "github" | "microsoft
   );
 }
 
-export function Login() {
+export function Login({ initialMode = "in" }: { initialMode?: "in" | "up" }) {
   const { signIn, signUp, signInWithProvider } = useAuth();
-  const [mode, setMode] = useState<"in" | "up">("in");
+  const [mode, setMode] = useState<"in" | "up">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +86,7 @@ export function Login() {
       <div className="mx-auto grid w-full max-w-xl gap-10 lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-center lg:gap-14">
         <section className="login-intro min-w-0">
           <div className="flex items-center justify-between gap-3">
-            <Logo />
+            <Link href="/" aria-label="Recall home"><Logo /></Link>
             <ThemeToggle compact />
           </div>
           <h1 className="login-title mt-12 max-w-3xl">

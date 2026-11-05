@@ -22,7 +22,7 @@ function size(bytes: number) {
 }
 
 /** Status as a mark in a fixed cell: filled = ready, hollow = still working, struck = failed. */
-function StatusMark({ status }: { status: FileItem["status"] }) {
+export function StatusMark({ status }: { status: FileItem["status"] }) {
   const box = "mt-1 h-3.5 w-3.5 shrink-0 rounded-[2px] border-2";
   if (status === "ready") return <span className={`${box} border-ok bg-ok`} aria-hidden />;
   if (status === "failed")

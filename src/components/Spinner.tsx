@@ -36,3 +36,16 @@ export function LoadingMark() {
   );
 }
 
+
+/** Full-screen wait while Firebase restores the session. */
+export function Opening() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center" role="status">
+      <LoadingMark />
+      <div>
+        <p className="text-lg font-semibold">Opening Recall</p>
+        <p className="mt-1 text-sm text-muted">Getting your workspace ready…</p>
+      </div>
+    </div>
+  );
+}
