@@ -6,6 +6,8 @@ import type { Me, Tier } from "@/lib/types";
 import { Spinner } from "./Spinner";
 import { useAuth } from "./AuthProvider";
 import { loadCashfree } from "@/lib/cashfree";
+import { loadRazorpay } from "@/lib/razorpay";
+import { PayDialog } from "./PayDialog";
 import { inr, PRICES } from "@/lib/legal";
 
 // The plan table comes from the API (`me.limits`), so it always shows the limits the server enforces.
@@ -20,6 +22,8 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
   const [state, setState] = useState<"idle" | "opening" | "waiting">("idle");
   const [error, setError] = useState<string | null>(null);
   const [provider, setProvider] = useState<"cashfree" | "razorpay">("cashfree");
+  // The pass a buy button was clicked for, while the student picks Cashfree or Razorpay.
+  const [choosing, setChoosing] = useState<Tier | null>(null);
   const poll = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => () => { if (poll.current) clearInterval(poll.current); }, []);
@@ -105,45 +109,73 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
   const trialEnds = me?.trial?.ends_at ? new Date(me.trial.ends_at).toLocaleDateString(undefined, { dateStyle: "long" }) : null;
   const paidUntil = me?.paid_until ? new Date(me.paid_until).toLocaleDateString(undefined, { dateStyle: "long" }) : null;
 
-  async function upgrade(tier: Tier) {
-    const paymentWindow = provider === "razorpay" ? window.open("", "_blank") : null;
-    if (provider === "razorpay" && !paymentWindow) {
-      setError("Allow pop-ups to open the payment link, then try again.");
-      return;
-    }
+  /** Razorpay's Checkout window over this page; resolves true when paid, false when closed without paying. */
+  async function payWithRazorpay(tier: Tier): Promise<boolean> {
+    const [order, Razorpay] = await Promise.all([
+      api<{ order_id: string; key_id: string; amount: number; currency: string }>("/api/v1/billing/checkout", { method: "POST", body: { tier, phone: digits, provider: "razorpay" } }),
+      loadRazorpay(),
+    ]);
+    // An API without order support (older deploy) answers without these; say so instead of Razorpay's "No key passed".
+    if (!order.order_id || !order.key_id) throw new Error("Razorpay isn't available right now. Try Cashfree.");
+    // Checkout takes a hex colour, so read the ink token the buttons use.
+    const ink = getComputedStyle(document.documentElement).getPropertyValue("--ink-btn").trim();
+    return new Promise<boolean>((resolve) => {
+      const checkout = new Razorpay({
+        key: order.key_id,
+        order_id: order.order_id,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Recall",
+        description: `${TIER_NAME[tier]} pass, 30 days`,
+        prefill: { contact: "+91" + digits, email: user?.email ?? undefined },
+        theme: ink ? { color: ink } : undefined,
+        handler: () => resolve(true),
+        modal: { ondismiss: () => resolve(false) },
+      });
+      // A failed attempt keeps the window open so the student can try another method; say why meanwhile.
+      checkout.on("payment.failed", (r) => setError(r.error?.description ?? "The payment did not go through. Try again."));
+      checkout.open();
+    });
+  }
+
+  /** A buy button: ask how to pay when Razorpay is on, otherwise go straight to Cashfree. */
+  function buy(tier: Tier) {
+    setError(null);
+    if (RAZORPAY_ON) setChoosing(tier);
+    else void upgrade(tier, "cashfree");
+  }
+
+  async function upgrade(tier: Tier, via: "cashfree" | "razorpay") {
+    setChoosing(null);
+    setProvider(via);
     setError(null);
     setBuying(tier);
     setState("opening");
     paidUntilAtStart.current = me?.paid_until ?? null;
     try {
-      if (paymentWindow) {
-        paymentWindow.opener = null;
-        const link = await api<{ payment_url: string }>("/api/v1/billing/checkout", { method: "POST", body: { tier, phone: digits, provider } });
-        paymentWindow.location.href = link.payment_url;
-        setState("waiting");
-        let tries = 0;
-        poll.current = setInterval(() => {
-          if (++tries > 200 && poll.current) { clearInterval(poll.current); poll.current = null; setState("idle"); setBuying(null); }
-          void onPlanChange();
-        }, 3000);
-        return;
+      let paid: boolean;
+      if (via === "razorpay") {
+        paid = await payWithRazorpay(tier);
+        if (paid) setError(null);
+      } else {
+        const [order, Cashfree] = await Promise.all([
+          api<{ payment_session_id: string; mode: "sandbox" | "production" }>("/api/v1/billing/checkout", { method: "POST", body: { tier, phone: digits } }),
+          loadCashfree(),
+        ]);
+        // Cashfree's checkout opens as a popup over this page and resolves when it closes, so the user never
+        // leaves Recall. (In some in-app browsers it redirects instead and comes back to the return URL.)
+        const result = await Cashfree({ mode: order.mode }).checkout({ paymentSessionId: order.payment_session_id, redirectTarget: "_modal" });
+        if (result.redirect) return;
+        paid = !!result.paymentDetails;
       }
-      const [order, Cashfree] = await Promise.all([
-        api<{ payment_session_id: string; mode: "sandbox" | "production" }>("/api/v1/billing/checkout", { method: "POST", body: { tier, phone: digits } }),
-        loadCashfree(),
-      ]);
-      // Cashfree's checkout opens as a popup over this page and resolves when it closes, so the user never
-      // leaves Recall. (In some in-app browsers it redirects instead and comes back to the return URL.)
-      const result = await Cashfree({ mode: order.mode }).checkout({ paymentSessionId: order.payment_session_id, redirectTarget: "_modal" });
-      if (result.redirect) return;
-      if (!result.paymentDetails) {
+      if (!paid) {
         // Closed or failed: nothing to wait for. One check in case the payment went through just before closing.
         await onPlanChange();
         setState("idle");
         setBuying(null);
         return;
       }
-      // Paid. The pass is granted when Cashfree's webhook arrives (usually within seconds): check every few
+      // Paid. The pass is granted when the provider's webhook arrives (usually within seconds): check every few
       // seconds, up to 2 minutes. The effect above stops this as soon as paid_until moves.
       setState("waiting");
       void onPlanChange();
@@ -153,7 +185,6 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
         void onPlanChange();
       }, 3000);
     } catch (e) {
-      paymentWindow?.close();
       setError((e as Error).message);
       setState("idle");
       setBuying(null);
@@ -260,13 +291,6 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
             Each purchase is a 30-day pass; nothing is charged again automatically. */}
         {PAYMENTS_ON && me && (
           <div className="mt-6 border-t border-border pt-5">
-            {RAZORPAY_ON && <fieldset className="mb-4" disabled={busy}>
-              <legend className="label">Payment provider</legend>
-              <div className="mt-2 flex gap-5 text-sm">
-                <label><input type="radio" name="provider" checked={provider === "cashfree"} onChange={() => setProvider("cashfree")} /> Cashfree</label>
-                <label><input type="radio" name="provider" checked={provider === "razorpay"} onChange={() => setProvider("razorpay")} /> Razorpay</label>
-              </div>
-            </fieldset>}
             <label htmlFor="phone" className="label block">Mobile number</label>
             {/* The number and the buy buttons share a row; on narrow screens the buttons wrap below it. */}
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -279,22 +303,26 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
                      className={`field pl-12 ${showPhoneProblem ? "border-danger focus:border-danger focus:ring-danger/20" : ""}`} />
             </div>
             {me.plan === "free" && (
-              <button onClick={() => void upgrade("pro")} disabled={busy || !phoneOk} className="btn-primary">{buyLabel("pro", "Get Pro")}</button>
+              <button onClick={() => buy("pro")} disabled={busy || !phoneOk} className="btn-primary">{buyLabel("pro", "Get Pro")}</button>
             )}
             {me.plan === "pro" && (
-              <button onClick={() => void upgrade("pro")} disabled={busy || !phoneOk} className="btn">{buyLabel("pro", "Add 30 days of Pro")}</button>
+              <button onClick={() => buy("pro")} disabled={busy || !phoneOk} className="btn">{buyLabel("pro", "Add 30 days of Pro")}</button>
             )}
-            <button onClick={() => void upgrade("ultra")} disabled={busy || !phoneOk} className={me.plan === "pro" ? "btn-primary" : "btn"}>
+            <button onClick={() => buy("ultra")} disabled={busy || !phoneOk} className={me.plan === "pro" ? "btn-primary" : "btn"}>
               {buyLabel("ultra", me.plan === "pro" ? "Upgrade to Ultra" : me.plan === "ultra" ? "Add 30 days of Ultra" : "Get Ultra")}
             </button>
             </div>
+            {choosing && !busy && (
+              <PayDialog plan={TIER_NAME[choosing]} price={inr(PRICES[choosing])}
+                         onPick={(via) => void upgrade(choosing, via)} onClose={() => setChoosing(null)} />
+            )}
             <p id="phone-help" aria-live="polite" className={`mt-2 text-xs ${showPhoneProblem ? "text-danger" : "text-muted"}`}>
               {showPhoneProblem ? phoneProblem : "Needed by the payment provider for your receipt."}
             </p>
           </div>
         )}
         {state === "waiting" && (
-          <p className="mt-2 text-xs text-muted">Complete your payment. Your plan updates here after it is confirmed. {provider === "razorpay" && <button className="underline" onClick={() => { if (poll.current) clearInterval(poll.current); poll.current = null; setState("idle"); setBuying(null); }}>Stop checking</button>}</p>
+          <p className="mt-2 text-xs text-muted">Payment received. Your plan updates here in a few seconds.</p>
         )}
         {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
       </div>
