@@ -345,7 +345,7 @@ export function Chat({ initialFileId, refreshKey, canWeb }: { initialFileId: str
   return (
     <section className="grid gap-6 xl:grid-cols-[11rem_minmax(0,1fr)]">
       {/* Chapter band: the heading with the chosen document as its running head, ruled beneath. */}
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-border pb-5 xl:col-span-2">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b-2 border-fg pb-5 xl:col-span-2">
         <div>
           <h1 className="chapter">Ask</h1>
           <p className="mt-2 max-w-[60ch] text-sm text-muted">Ask questions about your documents and explore explanations with sources.</p>
@@ -372,7 +372,7 @@ export function Chat({ initialFileId, refreshKey, canWeb }: { initialFileId: str
       <div className="flex min-w-0 flex-col gap-4">
         {/* Answer style. */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <div className="inline-flex gap-1 rounded-lg border border-border bg-surface p-1" role="group" aria-label="Answer style">
+          <div className="inline-flex gap-1 rounded-[3px] border border-border bg-surface p-1" role="group" aria-label="Answer style">
             {(["explain", "answer"] as const).map((m) => (
               <button key={m} type="button" onClick={() => setMode(m)} aria-pressed={mode === m}
                       className={`px-3 py-1.5 text-sm font-semibold transition ${

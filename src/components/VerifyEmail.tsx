@@ -38,7 +38,6 @@ export function VerifyEmail({ onVerified }: { onVerified: () => Promise<void> })
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-8">
       <div className="sheet w-full max-w-md space-y-4 p-6 sm:p-8">
-        <p className="label">One more step</p>
         <h1 className="text-2xl font-bold">Verify your email</h1>
         <p className="text-sm leading-6 text-muted">
           We sent a link to <span className="font-semibold text-fg">{user?.email}</span>. Open it, then come back and press

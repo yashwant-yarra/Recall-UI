@@ -26,7 +26,7 @@ export function UploadDialog({ onUpload, onClose }: { onUpload: (file: File, mim
 
   return (
     <dialog ref={dialog} onClose={onClose} aria-labelledby="upload-title" aria-describedby="upload-help"
-            className="m-auto w-[min(36rem,94vw)] rounded-[3px] border border-border bg-surface p-0 text-fg shadow-2xl backdrop:bg-[#0b0c0f]/60"
+            className="m-auto w-[min(36rem,94vw)] rounded-[3px] border border-border bg-surface p-0 text-fg shadow-[var(--lift)] backdrop:bg-scrim"
             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setDragging(true); }}
             onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false); }}
             onDrop={(e) => { e.preventDefault(); setDragging(false); pick(e.dataTransfer.files); }}>

@@ -150,7 +150,7 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
     buying === tier && state === "opening" ? <><Spinner /> Opening Cashfree…</> : buying === tier && state === "waiting" ? <><Spinner /> Confirming payment…</> : text;
   return (
     <section className="max-w-4xl space-y-6">
-      <p className="max-w-[65ch] text-sm text-muted">Your account details and plan, all in one place.</p>
+      <p className="max-w-[65ch] text-sm text-muted">Your account details and plan.</p>
       {/* Who you are and what you're on, in one compact row; the plan table below gets the full width. */}
       <div className="sheet flex flex-wrap items-end justify-between gap-x-10 gap-y-4 px-5 py-6 sm:px-8">
         <div className="min-w-0">
@@ -163,8 +163,7 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
         </div>
       </div>
       <div className="sheet px-5 py-6 sm:px-8">
-        <p className="label">Plan comparison</p>
-        <h2 className="mt-2 text-xl font-semibold">Your weekly allowance</h2>
+        <h2 className="text-xl font-semibold">Your weekly allowance</h2>
         <p className="mt-1 text-sm text-muted">Compare what’s included with each plan. Paid plans are one-time 30-day passes; nothing renews automatically.</p>
         <div className="mt-6 overflow-x-auto">
         <table className="w-full min-w-[26rem] text-sm">
@@ -274,8 +273,7 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
       </div>
 
       <div className="sheet px-5 py-6 sm:px-8">
-        <p className="label">Your data</p>
-        <h2 className="mt-2 text-xl font-semibold">Clear all data</h2>
+        <h2 className="text-xl font-semibold">Clear all data</h2>
         <p className="mt-1 max-w-[60ch] text-sm text-muted">
           Permanently deletes your documents and voice notes, chats, quizzes, agent runs, tasks and drafts.
           Your account and plan stay. This cannot be undone.

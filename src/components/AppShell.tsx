@@ -101,12 +101,10 @@ export function AppShell() {
           <Logo />
           {plan}
         </div>
-        <nav className="mt-12 flex flex-col items-start gap-1.5" aria-label="Sections">
+        <nav className="rail-nav" aria-label="Sections">
           {TABS.map((t) => (
             <button key={t.id} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}
-                    className={`workspace-nav text-sm font-medium transition ${
-                      tab === t.id ? "text-accent" : "text-muted hover:text-fg"}`}>
-              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={NAV_PATHS[t.id]} /></svg>
+                    className="workspace-nav">
               {t.label}
             </button>
           ))}

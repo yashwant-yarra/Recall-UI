@@ -84,33 +84,36 @@ export function Login() {
       <div className="mx-auto grid w-full max-w-xl gap-10 lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-center lg:gap-14">
         <section className="login-intro min-w-0">
           <Logo />
-          <h1 className="login-title mt-12 max-w-xl">
-            Everything you learn, <span className="text-muted">within reach.</span>
+          <h1 className="login-title mt-12 max-w-3xl">
+            Everything you <span className="hl hl-solid hl-n1">learn,</span> <span className="hl hl-solid hl-n2">within reach.</span>
           </h1>
-          <p className="mt-4 max-w-lg text-base leading-7 text-muted">
+          <p className="mt-6 max-w-lg text-base leading-7 text-muted">
             Bring your documents and voice notes together. Ask questions, talk through ideas, and turn what you find into action.
           </p>
-          {/* A sample page: what an answer looks like, with its numbered sources in the margin. */}
-          <div aria-hidden="true" className="login-example hidden sm:block">
-            <p className="text-[1.05rem] font-semibold text-accent">Why does ice float on water?</p>
-            <p className="mt-3 text-[0.97rem] leading-7">
-              <span className="hl-quiet hl-n1" data-on="true">Water expands as it freezes, so ice is less dense than liquid water.</span>
-              <sup><span className="hl hl-solid hl-n1 ml-0.5 inline-block rounded-[2px] px-1 text-[0.95em] leading-[1.35] font-bold">1</span></sup>{" "}
-              <span className="hl-quiet hl-n2">Hydrogen bonds hold the molecules in an open lattice.</span>
-              <sup><span className="hl hl-solid hl-n2 ml-0.5 inline-block rounded-[2px] px-1 text-[0.95em] leading-[1.35] font-bold">2</span></sup>
-            </p>
-            <p className="label mt-4 border-t border-border pt-3">Sources</p>
-            <p className="mt-1 text-sm"><span className="hl hl-solid hl-n1 px-0.5"><b>1</b> physics-notes.pdf, p. 12</span></p>
-            <p className="mt-1 text-sm"><span className="hl hl-solid hl-n2 px-0.5"><b>2</b> chemistry-ch4.pdf, p. 3</span></p>
+          {/* A sample page: what an answer looks like, with its numbered sources in the ruled margin. */}
+          <div aria-hidden="true" className="login-example sheet">
+            <div>
+              <p className="text-[1.05rem] font-semibold text-accent">Why does ice float on water?</p>
+              <p className="mt-3 text-[0.97rem] leading-7">
+                <span className="hl-quiet hl-n1" data-on="true">Water expands as it freezes, so ice is less dense than liquid water.</span>
+                <sup><span className="hl hl-solid hl-n1 ml-0.5 inline-block rounded-[2px] px-1 text-[0.95em] leading-[1.35] font-bold">1</span></sup>{" "}
+                <span className="hl-quiet hl-n2">Hydrogen bonds hold the molecules in an open lattice.</span>
+                <sup><span className="hl hl-solid hl-n2 ml-0.5 inline-block rounded-[2px] px-1 text-[0.95em] leading-[1.35] font-bold">2</span></sup>
+              </p>
+            </div>
+            <div className="margin">
+              <p className="label">Sources</p>
+              <p className="mt-2 text-sm"><span className="hl hl-solid hl-n1 px-0.5"><b>1</b> physics-notes.pdf, p. 12</span></p>
+              <p className="mt-2 text-sm"><span className="hl hl-solid hl-n2 px-0.5"><b>2</b> chemistry-ch4.pdf, p. 3</span></p>
+            </div>
           </div>
         </section>
-        <section className="login-account w-full lg:max-w-md lg:justify-self-end">
-        <form onSubmit={submit} className="login-form space-y-4 py-3 sm:p-5">
-          <div className="border-b border-border pb-5">
-
-            <h2 className="text-3xl leading-tight font-semibold tracking-tight">{mode === "in" ? "Pick up where you left off" : "Start your study space"}</h2>
-            <p className="mt-1 text-sm text-muted">{mode === "in" ? "Sign in to continue to your workspace." : "Choose how you’d like to create your account."}</p>
+        <section className="w-full lg:max-w-md lg:justify-self-end">
+        <form onSubmit={submit} className="login-form sheet space-y-4">
+          <div className="chapter-band !mb-6">
+            <h2 className="chapter !text-4xl">{mode === "in" ? "Pick up where you left off" : "Start your study space"}</h2>
           </div>
+          <p className="-mt-2 text-sm text-muted">{mode === "in" ? "Sign in to continue to your workspace." : "Choose how you’d like to create your account."}</p>
 
           {([ ["google", "Google"], ["github", "GitHub"], ["microsoft", "Microsoft"] ] as const).map(([provider, name]) => (
             <button key={provider} type="button" onClick={() => void providerSignIn(provider)} disabled={!!busy} className="btn w-full">
