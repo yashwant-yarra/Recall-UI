@@ -13,6 +13,7 @@ import { ProLock } from "./ProLock";
 import { QuizView } from "./QuizView";
 import { Talk } from "./Talk";
 import { StorageNotice } from "./StorageNotice";
+import { ThemeToggle } from "./ThemeToggle";
 import { Tasks } from "./Tasks";
 import { VerifyEmail } from "./VerifyEmail";
 
@@ -111,12 +112,13 @@ export function AppShell() {
         </nav>
         <div className="mt-auto space-y-3 text-sm">
           <p className="truncate text-muted" title={user?.email ?? undefined}>{user?.email}</p>
+          <ThemeToggle className="w-full" />
           <button onClick={() => void logOut()} className="btn w-full">Sign out</button>
         </div>
       </aside>
 
       {/* Phones: a slim header; sections move to the bottom bar. */}
-      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 lg:hidden">
+      <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border bg-bg px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
           <Logo />
           {plan}
@@ -126,6 +128,7 @@ export function AppShell() {
                   className={`text-sm font-semibold ${tab === "account" ? "current" : "text-muted"}`}>
             Account
           </button>
+          <ThemeToggle compact />
           <button onClick={() => void logOut()} className="btn px-2.5 py-1.5">Sign out</button>
         </div>
       </header>

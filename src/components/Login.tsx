@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { LegalLinks } from "./LegalLinks";
 import { Spinner } from "./Spinner";
+import { ThemeToggle } from "./ThemeToggle";
 
 const MESSAGES: Record<string, string> = {
   "auth/invalid-credential": "Wrong email or password.",
@@ -83,7 +84,10 @@ export function Login() {
     <main className="min-h-screen px-4 py-6 sm:px-8 lg:flex lg:items-center lg:py-10">
       <div className="mx-auto grid w-full max-w-xl gap-10 lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-center lg:gap-14">
         <section className="login-intro min-w-0">
-          <Logo />
+          <div className="flex items-center justify-between gap-3">
+            <Logo />
+            <ThemeToggle compact />
+          </div>
           <h1 className="login-title mt-12 max-w-3xl">
             Everything you <span className="hl hl-solid hl-n1">learn,</span> <span className="hl hl-solid hl-n2">within reach.</span>
           </h1>

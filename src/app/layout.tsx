@@ -8,6 +8,8 @@ import "./globals.css";
 // Variable Archivo with its width axis: condensed for chapter headings, normal for reading.
 const archivo = Archivo({ variable: "--font-archivo", subsets: ["latin"], axes: ["wdth"] });
 
+const THEME_INIT = `try{var t=localStorage.getItem("recall-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+
 export const metadata: Metadata = {
   title: "Recall",
   icons: { icon: { url: "/recall-mark.svg", type: "image/svg+xml", sizes: "any" } },
@@ -16,7 +18,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${archivo.variable} h-full antialiased`}>
+    <html lang="en" className={`${archivo.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Apply a saved light/dark choice before first paint so the page never flashes the other theme. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+      </head>
       <body className="min-h-full font-sans">
         <AuthProvider>{children}</AuthProvider>
       </body>
