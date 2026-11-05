@@ -30,7 +30,7 @@ export default function Refund() {
       <p><Link href="/contact">Contact us</Link> from the email on your account, with the date and amount of the payment. We reply within 2 business days.</p>
 
       <h2>When you get the money</h2>
-      <p>Approved refunds go back to the original payment method through Cashfree. Banks usually take 5 to 7 business days to show it.</p>
+      <p>Approved refunds go back to the original payment method through the payment provider. Banks usually take 5 to 7 business days to show it.</p>
     </LegalPage>
   );
 }

@@ -14,7 +14,7 @@ export default function Privacy() {
         <li><strong>Your content:</strong> documents you upload, voice notes and voice you speak to the tutor, your questions and chats, quizzes, and tasks and drafts the agent prepares.</li>
         <li><strong>Usage:</strong> how many uploads, questions and other actions you use each day, to enforce plan limits.</li>
         <li><strong>Site analytics:</strong> pages you visit, how you reached Recall, and your device, browser and approximate location (country or city), collected through cookies by Google Analytics. It never receives your documents, voice notes, chats or email address.</li>
-        <li><strong>Billing:</strong> your plan, when your pass ends, the payment link ID, and the mobile number you give at checkout (passed to Cashfree, which requires it). Your card or UPI details go straight to Cashfree; we never receive or store them.</li>
+        <li><strong>Billing:</strong> your plan, when your pass ends, the payment ID, and the mobile number you give at checkout (passed to your chosen payment provider). Your card or UPI details go straight to the provider; we never receive or store them.</li>
       </ul>
 
       <h2>How we use it</h2>
@@ -27,6 +27,7 @@ export default function Privacy() {
         <li><strong>Neon:</strong> the database holding your account data, chats and the searchable index of your material.</li>
         <li><strong>Google Vertex AI (Gemini):</strong> your questions and the matching passages of your material are sent to the AI model to produce answers, quizzes and speech. They are used to answer you, not to advertise to you.</li>
         <li><strong>Cashfree Payments:</strong> payments.</li>
+        <li><strong>Razorpay:</strong> payments.</li>
         <li><strong>Google Analytics:</strong> site usage statistics, as described above.</li>
       </ul>
       <p>Each of these providers has its own privacy terms. We share only what each needs to do its job.</p>

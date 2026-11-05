@@ -40,3 +40,9 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  # Enable after configuring and testing the Razorpay API and webhook.
+  - variable: NEXT_PUBLIC_RAZORPAY_ENABLED
+    value: "false"
+    availability:
+      - BUILD
+      - RUNTIME

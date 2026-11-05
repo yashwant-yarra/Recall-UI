@@ -13,11 +13,13 @@ const cell = (n: number | null) => (n === null ? "Unlimited" : n === 0 ? "Not in
 const TIER_NAME: Record<string, string> = { free: "Free", pro: "Pro", ultra: "Ultra" };
 // Buying is hidden until NEXT_PUBLIC_PAYMENTS_ENABLED=true (apphosting.yaml). Switch to Free stays for anyone paying.
 const PAYMENTS_ON = process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === "true";
+const RAZORPAY_ON = process.env.NEXT_PUBLIC_RAZORPAY_ENABLED === "true";
 
 export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanChange: () => Promise<void>; onTrial: () => Promise<void> }) {
   const { user } = useAuth();
   const [state, setState] = useState<"idle" | "opening" | "waiting">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [provider, setProvider] = useState<"cashfree" | "razorpay">("cashfree");
   const poll = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => () => { if (poll.current) clearInterval(poll.current); }, []);
@@ -104,11 +106,28 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
   const paidUntil = me?.paid_until ? new Date(me.paid_until).toLocaleDateString(undefined, { dateStyle: "long" }) : null;
 
   async function upgrade(tier: Tier) {
+    const paymentWindow = provider === "razorpay" ? window.open("", "_blank") : null;
+    if (provider === "razorpay" && !paymentWindow) {
+      setError("Allow pop-ups to open the payment link, then try again.");
+      return;
+    }
     setError(null);
     setBuying(tier);
     setState("opening");
     paidUntilAtStart.current = me?.paid_until ?? null;
     try {
+      if (paymentWindow) {
+        paymentWindow.opener = null;
+        const link = await api<{ payment_url: string }>("/api/v1/billing/checkout", { method: "POST", body: { tier, phone: digits, provider } });
+        paymentWindow.location.href = link.payment_url;
+        setState("waiting");
+        let tries = 0;
+        poll.current = setInterval(() => {
+          if (++tries > 200 && poll.current) { clearInterval(poll.current); poll.current = null; setState("idle"); setBuying(null); }
+          void onPlanChange();
+        }, 3000);
+        return;
+      }
       const [order, Cashfree] = await Promise.all([
         api<{ payment_session_id: string; mode: "sandbox" | "production" }>("/api/v1/billing/checkout", { method: "POST", body: { tier, phone: digits } }),
         loadCashfree(),
@@ -134,6 +153,7 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
         void onPlanChange();
       }, 3000);
     } catch (e) {
+      paymentWindow?.close();
       setError((e as Error).message);
       setState("idle");
       setBuying(null);
@@ -147,7 +167,7 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
   // The column that is yours is highlighted; during the trial that is Pro, the tier it gives.
   const mine = me ? (paid ? me.plan : trialing ? "pro" : "free") : null;
   const buyLabel = (tier: Tier, text: string) =>
-    buying === tier && state === "opening" ? <><Spinner /> Opening Cashfree…</> : buying === tier && state === "waiting" ? <><Spinner /> Confirming payment…</> : text;
+    buying === tier && state === "opening" ? <><Spinner /> Opening {provider === "razorpay" ? "Razorpay" : "Cashfree"}…</> : buying === tier && state === "waiting" ? <><Spinner /> Checking payment…</> : text;
   return (
     <section className="max-w-4xl space-y-6">
       <p className="max-w-[65ch] text-sm text-muted">Your account details and plan.</p>
@@ -240,6 +260,13 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
             Each purchase is a 30-day pass; nothing is charged again automatically. */}
         {PAYMENTS_ON && me && (
           <div className="mt-6 border-t border-border pt-5">
+            {RAZORPAY_ON && <fieldset className="mb-4" disabled={busy}>
+              <legend className="label">Payment provider</legend>
+              <div className="mt-2 flex gap-5 text-sm">
+                <label><input type="radio" name="provider" checked={provider === "cashfree"} onChange={() => setProvider("cashfree")} /> Cashfree</label>
+                <label><input type="radio" name="provider" checked={provider === "razorpay"} onChange={() => setProvider("razorpay")} /> Razorpay</label>
+              </div>
+            </fieldset>}
             <label htmlFor="phone" className="label block">Mobile number</label>
             {/* The number and the buy buttons share a row; on narrow screens the buttons wrap below it. */}
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -267,7 +294,7 @@ export function Account({ me, onPlanChange, onTrial }: { me: Me | null; onPlanCh
           </div>
         )}
         {state === "waiting" && (
-          <p className="mt-2 text-xs text-muted">Payment received. Your plan updates here in a few seconds.</p>
+          <p className="mt-2 text-xs text-muted">Complete your payment. Your plan updates here after it is confirmed. {provider === "razorpay" && <button className="underline" onClick={() => { if (poll.current) clearInterval(poll.current); poll.current = null; setState("idle"); setBuying(null); }}>Stop checking</button>}</p>
         )}
         {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
       </div>
