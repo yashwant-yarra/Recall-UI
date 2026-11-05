@@ -136,17 +136,34 @@ const TOUR = [
   { title: "Hand it a goal", text: "The agent searches your material and plans the steps, then asks before it saves a task or a draft.", Visual: AgentVisual },
 ];
 
-/** Pinned run: the visual holds still on wide screens while the four panels scroll past it. */
+/** Pinned run: on wide screens the visual holds still as the four panels scroll past it. */
 function Tour() {
   const [active, setActive] = useState(0);
   const panels = useRef<(HTMLElement | null)[]>([]);
   useEffect(() => {
-    const seen = new IntersectionObserver(
-      (entries) => entries.forEach((e) => e.isIntersecting && setActive(Number((e.target as HTMLElement).dataset.i))),
-      { rootMargin: "-45% 0px -45% 0px" },
-    );
-    panels.current.forEach((p) => p && seen.observe(p));
-    return () => seen.disconnect();
+    // The current panel is the one whose copy sits nearest the middle of the screen.
+    let frame = 0;
+    const pick = () => {
+      frame = 0;
+      const mid = window.innerHeight / 2;
+      let best = 0;
+      let bestGap = Infinity;
+      panels.current.forEach((p, i) => {
+        if (!p) return;
+        const r = p.getBoundingClientRect();
+        const gap = Math.abs(r.top + r.height / 2 - mid);
+        if (gap < bestGap) [best, bestGap] = [i, gap];
+      });
+      setActive(best);
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(pick); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(frame);
+    };
   }, []);
   return (
     <section id="tour" className="home-tour" aria-labelledby="tour-head">
