@@ -275,7 +275,11 @@ export function Home() {
         <div className="home-container">
           <p className="home-foot-mark" aria-hidden="true">Recall</p>
           <LegalLinks className="mt-6" />
-          <p className="mt-4 text-sm text-muted">{BUSINESS.product} is operated by {BUSINESS.operator}.</p>
+          <p className="mt-4 text-sm text-muted">
+            {BUSINESS.product} is one of the things {BUSINESS.operator} makes.{" "}
+            <a href="https://novatomica.studio/" target="_blank" rel="noopener noreferrer"
+               className="font-semibold text-fg underline underline-offset-4 hover:text-accent">See the rest of the studio&apos;s projects</a>
+          </p>
         </div>
       </footer>
     </>
