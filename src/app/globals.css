@@ -377,7 +377,9 @@ html {
 .home-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
 .home-cta { min-height: 48px; padding-inline: 20px; font-size: 1rem; white-space: nowrap; }
 
-.home-nav { border-bottom: 2px solid var(--fg); background: var(--bg); }
+/* The masthead stays pinned to the top; anchor jumps land below it. */
+.home-nav { position: sticky; top: 0; z-index: 30; border-bottom: 2px solid var(--fg); background: var(--bg); }
+html:has(.home-nav) { scroll-padding-top: 96px; }
 .home-nav-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; min-height: 72px; }
 .home-nav-links { display: flex; gap: 24px; font-size: 0.95rem; font-weight: 600; }
 .home-nav-links a { color: var(--muted); text-underline-offset: 6px; }
