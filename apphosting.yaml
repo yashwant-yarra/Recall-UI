@@ -40,9 +40,9 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  # Enable after configuring and testing the Razorpay API and webhook.
+  # Offers Razorpay next to Cashfree on the Account page. Needs the API's Razorpay keys and an order.paid webhook.
   - variable: NEXT_PUBLIC_RAZORPAY_ENABLED
-    value: "false"
+    value: "true"
     availability:
       - BUILD
       - RUNTIME
